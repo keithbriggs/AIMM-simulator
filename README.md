@@ -1,4 +1,4 @@
-# Keith Briggs 2022-11-14
+AIMM 5G system simulator
 
 Purpose
 -------
@@ -8,10 +8,10 @@ The AIMM simulator emulates a cellular radio system roughly following 5G concept
 Software prerequisites
 ----------------------
 
-1. `Python 3.8 or higher <http://python.org>`_.
-2. `NumPy <https://numpy.org/>`_. This normally comes with python distributions.
-3. `Simpy <https://pypi.org/project/simpy/>`_.   This will need to be installed, e.g. with ``pip install simpy``.
-4. If real-time plotting is needed, `matplotlib <https://matplotlib.org>`_.
+1. Python 3.8 or higher <http://python.org>.
+2. NumPy <https://numpy.org/>. This normally comes with python distributions.
+3. Simpy <https://pypi.org/project/simpy/>.   This will need to be installed, e.g. with ``pip install simpy``.
+4. If real-time plotting is needed, matplotlib <https://matplotlib.org>.
 
 Installation
 ------------
@@ -21,12 +21,3 @@ Downloading the wheel (typically ``dist/aimm_simulator-2.0.0-py3-none-any.whl``)
 After the install, test it with ``python3 examples/basic_test.py``.
 
 See the full html documentation for further details.
-
-AIMM simulator blocks
----------------------
-
-.. figure:: AIMM_Simulator_block_diagram.png
-   :scale: 50 %
-   :alt: AIMM simulator block diagram
-
-   AIMM simulator block structure.
