@@ -25,7 +25,7 @@ See the full html documentation for further details.
 Simulator block diagram
 -----------------------
 
-The diagram shows the main classes in the code and the relationships between thhem. 
+The diagram shows the main classes in the code and the relationships between them. 
 
 ![AIMM Simulator block diagram](https://github.com/keithbriggs/AIMM-simulator/blob/main/doc/sphinx_source/AIMM_Simulator_block_diagram.png)
 
