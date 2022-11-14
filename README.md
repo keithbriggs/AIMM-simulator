@@ -21,3 +21,9 @@ Downloading the wheel (typically ``dist/aimm_simulator-2.0.0-py3-none-any.whl``)
 After the install, test it with ``python3 examples/basic_test.py``.
 
 See the full html documentation for further details.
+
+Simulator block diagram
+-----------------------
+
+![AIMM Simulator block diagram](https://github.com/keithbriggs/AIMM-simulator/blob/main/doc/sphinx_source/AIMM_Simulator_block_diagram.png)
+
