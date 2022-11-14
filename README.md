@@ -6,7 +6,7 @@ The AIMM simulator emulates a cellular radio system roughly following 5G concept
 Software prerequisites
 ----------------------
 
-1. Python 3.8 or higher <http://python.org>.
+1. Python 3.8 or higher <https://python.org>.
 2. NumPy <https://numpy.org/>. 
 3. Simpy <https://pypi.org/project/simpy/>.  This will need to be installed, e.g. with ``pip install simpy``.
 4. If real-time plotting is needed, matplotlib <https://matplotlib.org>.
