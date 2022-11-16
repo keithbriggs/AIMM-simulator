@@ -1,23 +1,4 @@
 # Keith Briggs 2022-11-11 2.0 version
-# Keith Briggs 2022-10-12 start all loops only in Sim.__init__
-# Keith Briggs 2022-10-11 energy calculations removed in favour of callbacks
-# Keith Briggs 2022-04-14 energy calculations
-# Keith Briggs 2022-04-14 new numpy RNG interface
-# Keith Briggs 2021-12-07 handover based on RSRP
-# Keith Briggs 2021-11-29 better handover algorithm; pathloss model cleanup.
-# Keith Briggs 2021-11-24 fix rsrp reporting with antenna patterns
-# Keith Briggs 2021-10-29 change pathloss function to accept two arguments, cell location and UE location.  The norm is taken inside the pathloss function, not outside as in previous version.
-# Keith Briggs 2021-10-25 add profiling
-# Keith Briggs 2021-10-20 Eliminate dataclasses (too slow?)
-# Keith Briggs 2021-06-14 Cleanups
-# Keith Briggs 2021-06-08 Improved subband reporting code.
-# Keith Briggs 2021-05-04 Revamp of kdtree code - in fact cut out kdtree, as it cannot handle the hetnet case, and is probably slower in all cases.
-# Keith Briggs 2021-04-21  Current priority list from call 2021-04-19: 2 Broadcast beam optimization. 7 Energy efficiency. 5 CU, DU, RU splits. 8 RIS.
-# Keith Briggs 2021-04-13 antenna patterns
-# Keith Briggs 2021-02-16 rsrp reports, faster linalg.norm etc.
-# Keith Briggs 2021-02-10 rejig Report to add [1]" field
-# python3 AIMM_simulator_core_07.py
-# python3 AIMM_simulator_core_07.py | ./realtime_plotter_03.py -tm=1000 -np=4 -fst=30 -fnb='img/AIMM_simulator_core_07' -ylims='{0: (0,1000), 1: (0,1000), 2: (0,15), 3: (0,20)}' -ylabels='{0: "x", 1: "y", 2: "CQI", 3: "throughput"}' -title 'UE$_0$'
 # Simulation structure:
 # Sim - Scenario - MME
 # |
