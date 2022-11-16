@@ -13,11 +13,12 @@
 import os,pathlib
 import sys
 #sys.path.insert(-1,os.path.abspath('../../src/AIMM_simulator/'))
-sys.path.insert(0,os.path.abspath('../../src/AIMM_simulator/'))
-sys.path.insert(0,os.path.abspath('../../src/'))
+sys.path.insert(0,os.path.abspath('./../../src/AIMM_simulator/'))
+sys.path.insert(0,os.path.abspath('./../../src/'))
 print(f'sys.path={sys.path}')
 #sys.path.insert(0, pathlib.Path(__file__).parents[2].resolve().as_posix())
 
+autodoc_mock_imports = ['AIMM_simulator']
 
 # -- Project information -----------------------------------------------------
 
