@@ -18,7 +18,9 @@ sys.path.insert(0,os.path.abspath('./../../src/'))
 print(f'sys.path={sys.path}')
 #sys.path.insert(0, pathlib.Path(__file__).parents[2].resolve().as_posix())
 
-autodoc_mock_imports = ['AIMM_simulator']
+autodoc_mock_imports = ['numpy','simpy']
+#from unittest.mock import MagicMock
+#sys.modules['numpy'] = MagicMock()
 
 # -- Project information -----------------------------------------------------
 
