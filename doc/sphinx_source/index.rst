@@ -335,8 +335,6 @@ NR 5G standard functions
 UMa pathloss model
 ~~~~~~~~~~~~~~~~~~~
 
-Urban macrocell dual-slope pathloss model, from 3GPP standard 36.873.
-
 .. automodule:: UMa_pathloss_model
    :members:
    :special-members:
@@ -345,8 +343,6 @@ Urban macrocell dual-slope pathloss model, from 3GPP standard 36.873.
 UMi pathloss model
 ~~~~~~~~~~~~~~~~~~~
 
-Urban microcell street-canyon pathloss model, from 3GPP standard 36.873.
-
 .. automodule:: UMi_pathloss_model
    :members:
    :special-members:
@@ -354,8 +350,6 @@ Urban microcell street-canyon pathloss model, from 3GPP standard 36.873.
 
 InH pathloss model
 ~~~~~~~~~~~~~~~~~~~
-
-3D-InH indoor pathloss model, from 3GPP standard 36.873.
 
 .. automodule:: InH_pathloss_model
    :members:
