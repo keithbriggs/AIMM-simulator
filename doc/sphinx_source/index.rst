@@ -28,7 +28,7 @@ The github sources are at <https://github.com/keithbriggs/AIMM-simulator>.
 Software dependencies
 ---------------------
 
-1. `Python 3.8<https://python.org>` or higher.
+1. `Python 3.8 <https://python.org>` or higher.
 2. `NumPy <https://numpy.org/>`_.
 3. `Simpy <https://pypi.org/project/simpy/>`_.
 4. If real-time plotting is needed, `matplotlib <https://matplotlib.org>`_, with an appropriate backend such as PyQt5 (``pip install PyQt5``).
@@ -36,9 +36,9 @@ Software dependencies
 Installation
 ------------
 
-Downloading the wheel (typically ``dist/aimm_simulator-2.0.0-py3-none-any.whl``) and running ``pip install <wheel>`` should be all that is needed.
+Downloading the wheel from github (typically ``dist/aimm_simulator-2.0.0-py3-none-any.whl``) and running ``pip install <wheel>`` should be all that is needed.
 
-Alternatively, the package can be installed by downloading the complete sources, and then doing ``make install_local``. 
+Alternatively, the package can be installed by downloading the complete repository (using the green `<> Code ⌄` button), and then doing ``make install_local``. 
 
 After the installation, test it with ``python3 examples/basic_test.py``.
 
