@@ -15,13 +15,12 @@ import sys
 #sys.path.insert(-1,os.path.abspath('../../src/AIMM_simulator/'))
 sys.path.insert(0,os.path.abspath('./../../src/AIMM_simulator/'))
 sys.path.insert(0,os.path.abspath('./../../src/'))
-#print(f'sys.path={sys.path}')
 #sys.path.insert(0, pathlib.Path(__file__).parents[2].resolve().as_posix())
 
 # don't fail the build if these are not importable...
 autodoc_mock_imports = ['numpy','simpy','matplotlib'] #,'argparse']
-from unittest.mock import MagicMock
-sys.modules['matplotlib']=MagicMock()
+#from unittest.mock import MagicMock
+#sys.modules['matplotlib']=MagicMock()
 #sys.modules['argparse']=MagicMock()
 
 # -- Project information -----------------------------------------------------
