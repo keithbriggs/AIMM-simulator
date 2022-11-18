@@ -561,7 +561,6 @@ class Sim:
     s.scenario=None
     s.ric=None
     s.mme=None
-    #s.kdtree=None
     s.hetnet=None # unknown at this point; will be set to True or False
     s.cells=[]
     s.UEs=[]
@@ -681,31 +680,12 @@ class Sim:
     if ue_i<len(s.UEs): return s.UEs[ue_i].serving_cell.i
     return None
 
-  #def make_kdtree(s):
-  #  if KDTree is None:
-  #    print('KDTree not available - kdtree will not be used',file=stderr)
-  #    return
-  #  try:
-  #    cell_locations=np.vstack([cell.xyz[:2] for cell in s.cells])
-  #    s.kdtree=KDTree(cell_locations)
-  #    print('KDTree built.',file=stderr)
-  #    return True
-  #  except:
-  #    return False
-
   def get_nearest_cell(s,xy):
     '''
     Return the index of the geographical nearest cell (in 2 dimensions)
     to the point xy.
     '''
     return _nearest_weighted_point(xy[:2],s.cell_locations[:,:2],w=1.0)[1]
-    #if KDTree is None:
-    #  print('KDTree not available - kdtree will not be used',file=stderr)
-    #  return None,None
-    #if s.kdtree is not None:
-    #  return s.kdtree.query(xy)
-    ## FIXME get nearest cell by brute-force
-    #return None,None
 
   def get_strongest_cell_simple_pathloss_model(s,xyz,alpha=3.5):
     '''
