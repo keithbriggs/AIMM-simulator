@@ -2,7 +2,7 @@
 # Keith Briggs 2022-01-31
 
 python3 AIMM_simulator_RIC_example_01.py | \
-   ./realtime_plotter_06a.py \
+   ./realtime_plotter.py \
    -author='Keith Briggs' \
    -nplots=7 \
    -tmax=10000 \
