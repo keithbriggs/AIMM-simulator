@@ -18,15 +18,18 @@ sys.path.insert(0,os.path.abspath('./../../src/'))
 #print(f'sys.path={sys.path}')
 #sys.path.insert(0, pathlib.Path(__file__).parents[2].resolve().as_posix())
 
-autodoc_mock_imports = ['numpy','simpy'] # don't fail the build if these are not importable
-#from unittest.mock import MagicMock
-#sys.modules['numpy'] = MagicMock()
+# don't fail the build if these are not importable...
+autodoc_mock_imports = ['numpy','simpy','matplotlib'] #,'argparse']
+from unittest.mock import MagicMock
+sys.modules['matplotlib']=MagicMock()
+#sys.modules['argparse']=MagicMock()
 
 # -- Project information -----------------------------------------------------
 
 project = 'AIMM simulator'
 copyright = '2022, Keith Briggs'
 author = 'Keith Briggs'
+source_suffix = '.rst'
 master_doc = 'index'
 
 # The full version, including alpha/beta/rc tags
@@ -41,11 +44,13 @@ today_fmt = '%Y-%m-%dT%H:%M'
 # https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
 extensions = [
  'sphinx.ext.autodoc',
- 'sphinx.ext.napoleon',
+ 'sphinx.ext.napoleon', # needed for "Parameters" to be recognized
+ 'sphinx.ext.viewcode',
+ 'sphinxarg.ext', # pip3 install sphinx-argparse (non-maintained version)
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+#templates_path = ['_templates']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -64,4 +69,4 @@ html_theme = 'nature' # 'pyramid' # 'haiku' #,   'bizstyle' #  'sphinxdoc' # 'al
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+#html_static_path = ['_static']

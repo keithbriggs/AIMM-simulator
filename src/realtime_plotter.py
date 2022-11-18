@@ -1,34 +1,29 @@
 #!/usr/bin/env python3
-# Keith Briggs 2021-12-14 naxes, not necessarily equal to nplots
-# Keith Briggs 2021-12-14 column_to_axis_map
-# Keith Briggs 2021-10-26 does matplotlib version=3.3.4 cause problems?
-# Keith Briggs 2021-07-19 try saving animation
-# Keith Briggs 2021-07-06 -extra
-# Keith Briggs 2021-03-18 cleanup
-# Keith Briggs 2021-02-03 read stdin
-# Keith Briggs 2020-09-30 move labels etc to __init__
-# Keith Briggs 2020-09-17 class for animated real-time plotting
-# Keith Briggs 2020-06-17 class
+# Keith Briggs 2022-11-18
+
+__version__='2.0.0'
 
 from sys import stdin,stderr,exit,argv
 from os.path import basename
 from time import time,sleep,strftime,localtime
-import numpy #as np
+import numpy
 from random import random
 import argparse
-import matplotlib.pyplot as plt
 from matplotlib import animation,use as matplotlib_use
-from matplotlib.patches import ConnectionPatch
-from matplotlib.lines import Line2D
-from matplotlib import __version__ as matplotlib_version
-matplotlib_use('TkAgg') # TkAgg or wxAgg or Qt5Agg or Qt4Agg
-matplotlib_use('Qt5Agg') # TkAgg or wxAgg or Qt5Agg or Qt4Agg
+from matplotlib import pyplot as plt
+try:
+  from matplotlib import __version__ as matplotlib_version
+  from matplotlib.patches import ConnectionPatch
+  from matplotlib.lines import Line2D
+  matplotlib_use('Qt5Agg') # TkAgg or wxAgg or Qt5Agg or Qt4Agg
+except:
+  pass
+
 _t0=time()
 _second_call=False
 
 def fig_timestamp(fig,author='',brand='AIMM Sim —',fontsize=6,color='blue',alpha=0.7,rotation=0,prespace='  '):
   # Keith Briggs 2020-01-07
-  # https://riptutorial.com/matplotlib/example/16030/coordinate-systems-and-text
   date=strftime('%Y-%m-%d %H:%M',localtime())
   fig.text( # position text relative to Figure
     0.01,0.005,prespace+'%s %s'%(brand+' '+author,date,),
@@ -253,11 +248,10 @@ def test_01(n=100,naxes=3):
 def main():
   parser=argparse.ArgumentParser()
   parser.add_argument('--selftest',       help='self-test',action='store_true')
-  parser.add_argument('-naxes',type=int, help='number of axes',default=0)
-  parser.add_argument('-nplots',type=int,help='number of plots',default=1)
-  #parser.add_argument('-ncols',type=int,  help='number of columns to read')
-  parser.add_argument('-tmax',type=float,   help='t_max',default=100.0)
-  parser.add_argument('-xlabel',type=str,     help='x axis label',default='time')
+  parser.add_argument('-naxes',type=int,  help='number of axes',default=0)
+  parser.add_argument('-nplots',type=int, help='number of plots',default=1)
+  parser.add_argument('-tmax',type=float, help='t_max',default=100.0)
+  parser.add_argument('-xlabel',type=str, help='x axis label',default='time')
   parser.add_argument('-fst',type=float,  help='final sleep time',default=5.0)
   parser.add_argument('-fnb',type=str,    help='filename base',default='')
   parser.add_argument('-ylims',type=str,  help='y limits (dict)',default='')
@@ -342,6 +336,7 @@ def main():
     animate.run(nframes=100)
   else:
     animate.run_noshow()
+  return parser
 
 if __name__=='__main__':
   print(f'matplotlib version={matplotlib_version}',file=stderr)

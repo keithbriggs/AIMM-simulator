@@ -1,7 +1,5 @@
 .. AIMM_simulator documentation master file, created by
    sphinx-quickstart on Mon Mar 15 16:10:21 2021.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
    Indices and tables
    ------------------
 
@@ -364,5 +362,35 @@ geometry_3d module
 .. automodule:: geometry_3d
    :members:
    :exclude-members: distance_to_plane,test_05,intersect_triangle
+
+Real-time plotting utility
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is independent of the main simulator code.  It reads output from the Logger via a pipe from stdin, and plots it using a matplotlib animation. It is driven with command-line options, which can be seen by running ``realtime_plotter.py --help``.
+
+.. code-block:: text
+
+  -h, --help            show this help message and exit
+  --selftest            self-test
+  -naxes NAXES          number of axes
+  -nplots NPLOTS        number of plots
+  -tmax TMAX            t_max
+  -xlabel XLABEL        x axis label
+  -fst FST              final sleep time
+  -fnb FNB              filename base
+  -ylims YLIMS          y limits (dict)
+  -ylabels YLABELS      ylabels (dict)
+  -title TITLE          figure title
+  -lw LW                plot linewidth
+  -author AUTHOR        author name for plot bottom margin
+  -extra EXTRA          extra features to be added to the plot; raw python code
+  -inputfile INPUTFILE  file to read input from instead of stdin; in this case the plot is not displayed, but written to an mp4 file
+  -column_to_axis_map COLUMN_TO_AXIS_MAP column_to_axis_map (dict)
+
+..
+  .. argparse::
+     :module: realtime_plotter
+     :func: main
+     :prog: realtime_plotter
 
 Last modified: |today|
