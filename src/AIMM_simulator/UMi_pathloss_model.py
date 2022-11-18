@@ -70,7 +70,7 @@ def plot():
   ' Plot the pathloss model predictions, as a self-test. '
   import numpy as np
   import matplotlib.pyplot as plt
-  from fig_timestamp_00 import fig_timestamp
+  from fig_timestamp import fig_timestamp
   fig=plt.figure(figsize=(8,6))
   ax=fig.add_subplot()
   ax.grid(color='gray',alpha=0.7,lw=0.5)

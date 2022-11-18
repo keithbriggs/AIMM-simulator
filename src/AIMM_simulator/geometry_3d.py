@@ -9,7 +9,7 @@ try: # if matplotlib is not installed, turn off plotting...
   import matplotlib.pyplot as plt
   from mpl_toolkits.mplot3d import Axes3D
   from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-  from fig_timestamp_00 import fig_timestamp
+  from fig_timestamp import fig_timestamp
 except:
   plt=None
 

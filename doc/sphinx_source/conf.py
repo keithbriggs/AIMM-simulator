@@ -15,10 +15,10 @@ import sys
 #sys.path.insert(-1,os.path.abspath('../../src/AIMM_simulator/'))
 sys.path.insert(0,os.path.abspath('./../../src/AIMM_simulator/'))
 sys.path.insert(0,os.path.abspath('./../../src/'))
-print(f'sys.path={sys.path}')
+#print(f'sys.path={sys.path}')
 #sys.path.insert(0, pathlib.Path(__file__).parents[2].resolve().as_posix())
 
-autodoc_mock_imports = ['numpy','simpy']
+autodoc_mock_imports = ['numpy','simpy'] # don't fail the build if these are not importable
 #from unittest.mock import MagicMock
 #sys.modules['numpy'] = MagicMock()
 

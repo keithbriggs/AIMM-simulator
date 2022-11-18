@@ -8,7 +8,7 @@ version = "2.0.0"
 authors = [
   { name="Keith Briggs", email="k.briggs73@btinternet.com" },
 ]
-description = "AIMM 5G system-level simulator (https://aimm.celticnext.eu)"
+description = "AIMM 5G system-level simulator (development for the AIMM project https://aimm.celticnext.eu)"
 keywords = ["5G", "cellular radio", "simulation",]
 "Bug Tracker" = "https://github.com/keithbriggs/AIMM-simulator/issues"
 readme = "README.md"
@@ -19,9 +19,9 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-  "numpy",
-  "simpy",
-  "matplotlib",
+  "numpy>=1.23.*",
+  "simpy>=4.0.*",
+  "matplotlib>=3.6.*",
 ]
 
 [project.urls]
