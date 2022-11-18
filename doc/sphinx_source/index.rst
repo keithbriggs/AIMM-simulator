@@ -21,15 +21,16 @@ Last modified: |today|
 Purpose
 -------
 
-The AIMM simulator emulates a cellular radio system roughly following 5G concepts and channel models.   The intention is to have an easy-to-use and fast system written in pure Python with minimal dependencies. It is especially designed to be suitable for interfacing to AI engines such as ``tensorflow`` or ``pytorch``, and it is not a principal aim for it to be extremely accurate at the level of the radio channel. The simulator was developed for the `AIMM project <https://aimm.celticnext.eu>`_.
+The AIMM simulator emulates a cellular radio system roughly following 5G concepts and channel models. The intention is to have an easy-to-use and fast system written in pure Python with minimal dependencies. It is especially designed to be suitable for interfacing to AI engines such as ``tensorflow`` or ``pytorch``, and it is not a principal aim for it to be extremely accurate at the level of the radio channel. The simulator was developed for the `AIMM project <https://aimm.celticnext.eu>`_.
 
+The github sources are at <https://github.com/keithbriggs/AIMM-simulator>.
 
-Software prerequisites
-----------------------
+Software dependencies
+---------------------
 
-1. `Python 3.8 or higher <https://python.org>`_.
-2. `NumPy <https://numpy.org/>`_. This normally comes with python distributions.
-3. `Simpy <https://pypi.org/project/simpy/>`_.   This will need to be installed, e.g. with ``pip install simpy``.
+1. `Python 3.8<https://python.org>` or higher.
+2. `NumPy <https://numpy.org/>`_.
+3. `Simpy <https://pypi.org/project/simpy/>`_.
 4. If real-time plotting is needed, `matplotlib <https://matplotlib.org>`_, with an appropriate backend such as PyQt5 (``pip install PyQt5``).
 
 Installation
@@ -37,7 +38,9 @@ Installation
 
 Downloading the wheel (typically ``dist/aimm_simulator-2.0.0-py3-none-any.whl``) and running ``pip install <wheel>`` should be all that is needed.
 
-After the install, test it with ``python3 examples/basic_test.py``.
+Alternatively, the package can be installed by downloading the complete sources, and then doing ``make install_local``. 
+
+After the installation, test it with ``python3 examples/basic_test.py``.
 
 Note that a plotting utility ``src/realtime_plotter.py`` is included but not installed.  If needed, this script should be placed somewhere in your python path. 
 A folder ``img`` is used by the examples to save plots in png and pdf format.  So in order to run the examples with plotting, this folder must be created.
@@ -105,7 +108,6 @@ Typical output follows.   The locations are 3-dimensional, with the z component 
   UE[1]   is at [263.87 301.28   2.  ]
   UE[2]   is at [319.12 506.63   2.  ]
   UE[3]   is at [370.7  394.92   2.  ]
-  KDTree built.
   Sim: starting main loop for simulation time 100 seconds...
   0	0	15
   0	1	15
