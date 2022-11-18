@@ -46,7 +46,7 @@ extensions = [
  'sphinx.ext.autodoc',
  'sphinx.ext.napoleon', # needed for "Parameters" to be recognized
  'sphinx.ext.viewcode',
- 'sphinxarg.ext', # pip3 install sphinx-argparse (non-maintained version)
+ #'sphinxarg.ext', # pip3 install sphinx-argparse (non-maintained version)
 ]
 
 # Add any paths that contain templates here, relative to this directory.
