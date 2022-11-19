@@ -141,7 +141,7 @@ class Cell:
     #s.sim.env.process(s.loop()) # start Cell main loop
 
   def set_f_callback(s,f_callback,**kwargs):
-    ' Add a callack function to the main loop of this Cell '
+    ' Add a callback function to the main loop of this Cell '
     s.f_callback=f_callback
     s.f_callback_kwargs=kwargs
 
