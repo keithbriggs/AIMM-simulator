@@ -16,11 +16,16 @@ Software dependencies
 Installation
 ------------
 
-Downloading the wheel (typically ``dist/aimm_simulator-2.0.0-py3-none-any.whl``) and running ``pip install <wheel>`` should be all that is needed. This will install the dependencies listed above, if needed.
+Three ways are possible:
 
-After the install, test it with ``python3 examples/basic_test.py``.
+* The simplest way, direct from PyPI: ``pip install AIMM-simulator``. This will not always get the latest version.
 
-See the full html documentation for further details.
+* Download the wheel, typically ``dist/aimm_simulator-2.0.0-py3-none-any.whl`` from github, and run ``pip install <wheel>``.
+
+* Alternatively, the package can be installed by downloading the complete repository (using the green ``<> Code ⌄`` button) as a zip, unpacking it, and then doing ``make install_local`` from inside the unpacked zip. 
+
+After installation, run a test with ``python3 examples/basic_test.py``.
+
 
 Simulator block diagram
 -----------------------

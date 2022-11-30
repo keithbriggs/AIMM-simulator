@@ -34,11 +34,15 @@ Software dependencies
 Installation
 ------------
 
-Downloading the wheel from github (typically ``dist/aimm_simulator-2.0.0-py3-none-any.whl``) and running ``pip install <wheel>`` should be all that is needed.
+Three ways are possible:
 
-Alternatively, the package can be installed by downloading the complete repository (using the green ``<> Code ⌄`` button), and then doing ``make install_local``. 
+* The simplest way, direct from PyPI: ``pip install AIMM-simulator``. This will not always get the latest version.
 
-After the installation, test it with ``python3 examples/basic_test.py``.
+* Download the wheel, typically ``dist/aimm_simulator-2.0.0-py3-none-any.whl`` from github, and run ``pip install <wheel>``.
+
+* Alternatively, the package can be installed by downloading the complete repository (using the green ``<> Code ⌄`` button) as a zip, unpacking it, and then doing ``make install_local`` from inside the unpacked zip. 
+
+After installation, run a test with ``python3 examples/basic_test.py``.
 
 Note that a plotting utility ``src/realtime_plotter.py`` is included but not installed.  If needed, this script should be placed somewhere in your python path. 
 A folder ``img`` is used by the examples to save plots in png and pdf format.  So in order to run the examples with plotting, this folder must be created.
