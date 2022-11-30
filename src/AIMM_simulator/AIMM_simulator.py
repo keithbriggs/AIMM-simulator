@@ -85,7 +85,7 @@ class Cell:
     Transmit power in dBm.
   MIMO_gain_dB : float
     Effective power gain from MIMO in dB.  This is no more than a crude way to
-    estimate the performance gain from using MIMO.  A typical[1] might be 3dB for 2x2 MIMO.
+    estimate the performance gain from using MIMO.  A typical value might be 3dB for 2x2 MIMO.
   pattern : array or function
     If an array, then a 360-element array giving the antenna gain in dB in 1-degree increments (0=east, then counterclockwise).  Otherwise, a function giving the antenna gain in dB in the direction theta=(180/pi)*atan2(y,x).
   f_callback :
