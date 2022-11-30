@@ -1,0 +1,193 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>UMa_pathloss_model &#8212; AIMM simulator 2.0.0 documentation</title>
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">AIMM simulator 2.0.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for UMa_pathloss_model</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Keith Briggs 2022-03-07 NLOS case implemented.</span>
+<span class="c1"># Keith Briggs 2021-10-29 pathloss function now take two arguments, cell position and UE position.  This allows pathloss to depend on absolute position, not just distance</span>
+<span class="c1"># Keith Briggs 2021-05-17</span>
+<span class="c1"># Keith Briggs 2020-10-05; cf. ~/Voronoi-2.1/try_3GPP_UMa_pathloss_01.py</span>
+<span class="c1"># Self-test (makes a plot): python3 UMa_pathloss_model_01.py</span>
+
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">log10</span><span class="p">,</span><span class="n">hypot</span>
+<span class="kn">from</span> <span class="nn">numpy.linalg</span> <span class="kn">import</span> <span class="n">norm</span>
+
+<div class="viewcode-block" id="UMa_pathloss"><a class="viewcode-back" href="../index.html#UMa_pathloss_model.UMa_pathloss">[docs]</a><span class="k">class</span> <span class="nc">UMa_pathloss</span><span class="p">:</span>
+  <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">  Urban macrocell dual-slope pathloss model, from 3GPP standard 36.873,</span>
+<span class="sd">  Table 7.2-1.</span>
+
+<span class="sd">  The model is defined in 36873-c70.doc from https://portal.3gpp.org/desktopmodules/Specifications/SpecificationDetails.aspx?specificationId=2574.</span>
+
+<span class="sd">  This code covers the cases 3D-UMa LOS and NLOS.</span>
+<span class="sd">  3D-UMa = three dimensional urban macrocell model.</span>
+<span class="sd">  LOS    = line-of-sight.</span>
+<span class="sd">  NLOS   = non-line-of-sight.</span>
+
+<span class="sd">  &#39;&#39;&#39;</span>
+<div class="viewcode-block" id="UMa_pathloss.__init__"><a class="viewcode-back" href="../index.html#UMa_pathloss_model.UMa_pathloss.__init__">[docs]</a>  <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">fc_GHz</span><span class="o">=</span><span class="mf">3.5</span><span class="p">,</span><span class="n">h_UT</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span><span class="n">h_BS</span><span class="o">=</span><span class="mf">25.0</span><span class="p">,</span><span class="n">LOS</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">h</span><span class="o">=</span><span class="mf">20.0</span><span class="p">,</span><span class="n">W</span><span class="o">=</span><span class="mf">20.0</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Initialize a pathloss model instance.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fc_GHz : float</span>
+<span class="sd">      Centre frequency in GigaHertz (default 3.5).</span>
+<span class="sd">    h_UT : float</span>
+<span class="sd">      Height of User Terminal (=UE) in metres  (default 2).</span>
+<span class="sd">    h_BS : float</span>
+<span class="sd">      Height of Base Station in metres (default 25).</span>
+<span class="sd">    LOS: bool</span>
+<span class="sd">      Whether line-of-sight model is to be used (default True).</span>
+<span class="sd">    h : float</span>
+<span class="sd">      Average building height (default 20, used in NLOS case only)</span>
+<span class="sd">    W : float</span>
+<span class="sd">      Street width (default 20, used in NLOS case only)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">fc</span><span class="o">=</span><span class="n">fc_GHz</span> <span class="c1"># GHz</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">log10fc</span><span class="o">=</span><span class="n">log10</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">fc</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">h_UT</span><span class="o">=</span><span class="n">h_UT</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">h_BS</span><span class="o">=</span><span class="n">h_BS</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">LOS</span><span class="o">=</span><span class="n">LOS</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">h</span><span class="o">=</span><span class="n">h</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">W</span><span class="o">=</span><span class="n">W</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">c</span><span class="o">=</span><span class="mf">3e8</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">h_E</span><span class="o">=</span><span class="mf">1.0</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">dBP</span><span class="o">=</span><span class="mf">4.0</span><span class="o">*</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">h_BS</span><span class="o">-</span><span class="n">s</span><span class="o">.</span><span class="n">h_E</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">h_UT</span><span class="o">-</span><span class="n">s</span><span class="o">.</span><span class="n">h_E</span><span class="p">)</span><span class="o">*</span><span class="n">s</span><span class="o">.</span><span class="n">fc</span><span class="o">*</span><span class="mf">1e9</span><span class="o">/</span><span class="n">s</span><span class="o">.</span><span class="n">c</span> <span class="c1"># Note 1</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">a</span><span class="o">=</span><span class="mf">9.0</span><span class="o">*</span><span class="n">log10</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">dBP</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">h_BS</span><span class="o">-</span><span class="n">s</span><span class="o">.</span><span class="n">h_UT</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="c1"># pre-compute constants to speed up calls...</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">const_close</span><span class="o">=</span><span class="mf">28.0</span><span class="o">+</span><span class="mf">20.0</span><span class="o">*</span><span class="n">s</span><span class="o">.</span><span class="n">log10fc</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">const_far</span>  <span class="o">=</span><span class="mf">28.0</span><span class="o">+</span><span class="mf">20.0</span><span class="o">*</span><span class="n">s</span><span class="o">.</span><span class="n">log10fc</span><span class="o">-</span><span class="n">s</span><span class="o">.</span><span class="n">a</span></div>
+
+<div class="viewcode-block" id="UMa_pathloss.__call__"><a class="viewcode-back" href="../index.html#UMa_pathloss_model.UMa_pathloss.__call__">[docs]</a>  <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">xyz_cell</span><span class="p">,</span><span class="n">xyz_UE</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return the pathloss between 3-dimensional positions xyz_cell and</span>
+<span class="sd">    xyz_UE (in metres).</span>
+<span class="sd">    Note that the distances, building heights, etc. are not checked</span>
+<span class="sd">    to ensure that this pathloss model is actually applicable.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># TODO: could we usefully vectorize this, so that xyz_cell,xyz_UE have shape (n,3) to compute n pathlosses at once?</span>
+    <span class="n">d3D_m</span><span class="o">=</span><span class="n">norm</span><span class="p">(</span><span class="n">xyz_cell</span><span class="o">-</span><span class="n">xyz_UE</span><span class="p">)</span> <span class="c1"># new way 2021-10-29</span>
+    <span class="c1"># TODO 2022-04-27: is the next faster? </span>
+    <span class="c1">#dxyz=xyz_cell-xyz_UE; d3D_m=hypot(dxyz[0],hypot(dxyz[1],dxyz[2]))</span>
+    <span class="k">if</span> <span class="n">d3D_m</span><span class="o">&lt;</span><span class="n">s</span><span class="o">.</span><span class="n">dBP</span><span class="p">:</span> <span class="n">PL3D_UMa_LOS</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">const_close</span><span class="o">+</span><span class="mf">22.0</span><span class="o">*</span><span class="n">log10</span><span class="p">(</span><span class="n">d3D_m</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>           <span class="n">PL3D_UMa_LOS</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">const_far</span>  <span class="o">+</span><span class="mf">40.0</span><span class="o">*</span><span class="n">log10</span><span class="p">(</span><span class="n">d3D_m</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">LOS</span><span class="p">:</span>
+      <span class="k">return</span> <span class="n">PL3D_UMa_LOS</span>
+    <span class="c1"># else NLOS:</span>
+    <span class="c1"># Formulas from Table 7.2-1 are...</span>
+    <span class="c1"># PL3D-UMa-NLOS=161.04-7.1*log10(W)+7.5*log10(h)-(24.37-3.7*(h/hBS)**2)*log10(hBS)+(43.42-3.1*log10(hBS))*(log10(d3D)-3)+20*log10(fc)-(3.2*(log10(17.625))**2-4.97)-0.6*(hUT-1.5)</span>
+    <span class="c1"># PL=max(PL3D-UMa-NLOS,PL3D-UMa-LOS)</span>
+    <span class="n">c1</span><span class="o">=-</span><span class="mf">9.1904695449517596702522e-4</span> <span class="c1"># =3.2*(log10(17.625))**2-4.97</span>
+    <span class="n">PL3D_UMa_NLOS</span><span class="o">=</span><span class="mf">161.04</span><span class="o">-</span><span class="mf">7.1</span><span class="o">*</span><span class="n">log10</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">W</span><span class="p">)</span><span class="o">+</span><span class="mf">7.5</span><span class="o">*</span><span class="n">log10</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">h</span><span class="p">)</span><span class="o">-</span><span class="p">(</span><span class="mf">24.37</span><span class="o">-</span><span class="mf">3.7</span><span class="o">*</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">h</span><span class="o">/</span><span class="n">s</span><span class="o">.</span><span class="n">h_BS</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">log10</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">h_BS</span><span class="p">)</span><span class="o">+</span><span class="p">(</span><span class="mf">43.42</span><span class="o">-</span><span class="mf">3.1</span><span class="o">*</span><span class="n">log10</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">h_BS</span><span class="p">))</span><span class="o">*</span><span class="p">(</span><span class="n">log10</span><span class="p">(</span><span class="n">d3D_m</span><span class="p">)</span><span class="o">-</span><span class="mf">3.0</span><span class="p">)</span><span class="o">+</span><span class="mi">20</span><span class="o">*</span><span class="n">log10</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">fc</span><span class="p">)</span><span class="o">-</span><span class="p">(</span><span class="n">c1</span><span class="p">)</span><span class="o">-</span><span class="mf">0.6</span><span class="o">*</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">h_UT</span><span class="o">-</span><span class="mf">1.5</span><span class="p">)</span> <span class="c1"># TODO pre-compute more constants to speed this up!</span>
+    <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">PL3D_UMa_NLOS</span><span class="p">,</span><span class="n">PL3D_UMa_LOS</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="plot"><a class="viewcode-back" href="../index.html#UMa_pathloss_model.plot">[docs]</a><span class="k">def</span> <span class="nf">plot</span><span class="p">():</span>
+  <span class="s1">&#39; Plot the pathloss model predictions, as a self-test. &#39;</span>
+  <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+  <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+  <span class="kn">from</span> <span class="nn">fig_timestamp</span> <span class="kn">import</span> <span class="n">fig_timestamp</span>
+  <span class="n">fig</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+  <span class="n">ax</span><span class="o">=</span><span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">()</span>
+  <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">,</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span><span class="n">lw</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+  <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">5000</span><span class="p">,</span><span class="mi">100</span><span class="p">)</span> <span class="c1"># valid from 10m</span>
+  <span class="n">PL</span><span class="o">=</span><span class="n">UMa_pathloss</span><span class="p">(</span><span class="n">fc_GHz</span><span class="o">=</span><span class="mf">1.8</span><span class="p">,</span><span class="n">h_UT</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span><span class="n">h_BS</span><span class="o">=</span><span class="mf">17.5</span><span class="p">,</span><span class="n">LOS</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+  <span class="n">NLOS</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">PL</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">di</span><span class="p">)</span> <span class="k">for</span> <span class="n">di</span> <span class="ow">in</span> <span class="n">d</span><span class="p">])</span>
+  <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">d</span><span class="p">,</span><span class="n">NLOS</span><span class="p">,</span><span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;NLOS ($\sigma=6$)&#39;</span><span class="p">)</span> <span class="c1"># or semilogx</span>
+  <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">d</span><span class="p">,</span><span class="n">NLOS</span><span class="o">-</span><span class="mf">6.0</span><span class="p">,</span><span class="n">NLOS</span><span class="o">+</span><span class="mf">6.0</span><span class="p">,</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span> <span class="c1"># sigma_{SF}=6 for NLOS case</span>
+  <span class="n">PL</span><span class="o">=</span><span class="n">UMa_pathloss</span><span class="p">(</span><span class="n">fc_GHz</span><span class="o">=</span><span class="mf">1.8</span><span class="p">,</span><span class="n">h_UT</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span><span class="n">h_BS</span><span class="o">=</span><span class="mf">17.5</span><span class="p">,</span><span class="n">LOS</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+  <span class="n">LOS</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">PL</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">di</span><span class="p">)</span> <span class="k">for</span> <span class="n">di</span> <span class="ow">in</span> <span class="n">d</span><span class="p">])</span>
+  <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">d</span><span class="p">,</span><span class="n">LOS</span><span class="p">,</span><span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;LOS ($\sigma=4$)&#39;</span><span class="p">)</span> <span class="c1"># or semilogx</span>
+  <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">d</span><span class="p">,</span><span class="n">LOS</span><span class="o">-</span><span class="mf">4.0</span><span class="p">,</span><span class="n">LOS</span><span class="o">+</span><span class="mf">4.0</span><span class="p">,</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span> <span class="c1"># sigma_{SF}=4 for LOS case</span>
+  <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;distance (metres)&#39;</span><span class="p">)</span>
+  <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;pathloss (dB)&#39;</span><span class="p">)</span>
+  <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">d</span><span class="p">))</span>
+  <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">40</span><span class="p">)</span>
+  <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+  <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;3GPP UMa pathloss models&#39;</span><span class="p">)</span>
+  <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+  <span class="n">fig_timestamp</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span><span class="n">rotation</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span><span class="n">author</span><span class="o">=</span><span class="s1">&#39;Keith Briggs&#39;</span><span class="p">)</span>
+  <span class="n">fnbase</span><span class="o">=</span><span class="s1">&#39;img/UMa_pathloss_model_01&#39;</span>
+  <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">fnbase</span><span class="si">}</span><span class="s1">.png&#39;</span><span class="p">)</span>
+  <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;eog </span><span class="si">{</span><span class="n">fnbase</span><span class="si">}</span><span class="s1">.png &amp;&#39;</span><span class="p">)</span>
+  <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">fnbase</span><span class="si">}</span><span class="s1">.pdf&#39;</span><span class="p">)</span>
+  <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;evince </span><span class="si">{</span><span class="n">fnbase</span><span class="si">}</span><span class="s1">.pdf &amp;&#39;</span><span class="p">)</span></div>
+
+<span class="k">if</span> <span class="vm">__name__</span><span class="o">==</span><span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+  <span class="n">plot</span><span class="p">()</span> <span class="c1"># simple self-test</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">AIMM simulator 2.0.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Keith Briggs.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

@@ -1,7 +1,5 @@
 .. AIMM_simulator documentation master file, created by
    sphinx-quickstart on Mon Mar 15 16:10:21 2021.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
    Indices and tables
    ------------------
 
@@ -21,23 +19,30 @@ Last modified: |today|
 Purpose
 -------
 
-The AIMM simulator emulates a cellular radio system roughly following 5G concepts and channel models.   The intention is to have an easy-to-use and fast system written in pure Python with minimal dependencies. It is especially designed to be suitable for interfacing to AI engines such as ``tensorflow`` or ``pytorch``, and it is not a principal aim for it to be extremely accurate at the level of the radio channel. The simulator was developed for the `AIMM project <https://aimm.celticnext.eu>`_.
+The AIMM simulator emulates a cellular radio system roughly following 5G concepts and channel models. The intention is to have an easy-to-use and fast system written in pure Python with minimal dependencies. It is especially designed to be suitable for interfacing to AI engines such as ``tensorflow`` or ``pytorch``, and it is not a principal aim for it to be extremely accurate at the level of the radio channel. The simulator was developed for the `AIMM project <https://aimm.celticnext.eu>`_.
 
+The github sources are at <https://github.com/keithbriggs/AIMM-simulator>.
 
-Software prerequisites
-----------------------
+Software dependencies
+---------------------
 
-1. `Python 3.8 or higher <https://python.org>`_.
-2. `NumPy <https://numpy.org/>`_. This normally comes with python distributions.
-3. `Simpy <https://pypi.org/project/simpy/>`_.   This will need to be installed, e.g. with ``pip install simpy``.
+1. `Python 3.8 <https://python.org>`_ or higher.
+2. `NumPy <https://numpy.org/>`_.
+3. `Simpy <https://pypi.org/project/simpy/>`_.
 4. If real-time plotting is needed, `matplotlib <https://matplotlib.org>`_, with an appropriate backend such as PyQt5 (``pip install PyQt5``).
 
 Installation
 ------------
 
-Downloading the wheel (typically ``dist/aimm_simulator-2.0.0-py3-none-any.whl``) and running ``pip install <wheel>`` should be all that is needed.
+Three ways are possible:
 
-After the install, test it with ``python3 examples/basic_test.py``.
+* The simplest way, direct from PyPI: ``pip install AIMM-simulator``. This will not always get the latest version.
+
+* Download the wheel, typically ``dist/aimm_simulator-2.0.0-py3-none-any.whl`` from github, and run ``pip install <wheel>``.
+
+* Alternatively, the package can be installed by downloading the complete repository (using the green ``<> Code ⌄`` button) as a zip, unpacking it, and then doing ``make install_local`` from inside the unpacked zip. 
+
+After installation, run a test with ``python3 examples/basic_test.py``.
 
 Note that a plotting utility ``src/realtime_plotter.py`` is included but not installed.  If needed, this script should be placed somewhere in your python path. 
 A folder ``img`` is used by the examples to save plots in png and pdf format.  So in order to run the examples with plotting, this folder must be created.
@@ -105,7 +110,6 @@ Typical output follows.   The locations are 3-dimensional, with the z component 
   UE[1]   is at [263.87 301.28   2.  ]
   UE[2]   is at [319.12 506.63   2.  ]
   UE[3]   is at [370.7  394.92   2.  ]
-  KDTree built.
   Sim: starting main loop for simulation time 100 seconds...
   0	0	15
   0	1	15
@@ -335,8 +339,6 @@ NR 5G standard functions
 UMa pathloss model
 ~~~~~~~~~~~~~~~~~~~
 
-Urban macrocell dual-slope pathloss model, from 3GPP standard 36.873.
-
 .. automodule:: UMa_pathloss_model
    :members:
    :special-members:
@@ -345,8 +347,6 @@ Urban macrocell dual-slope pathloss model, from 3GPP standard 36.873.
 UMi pathloss model
 ~~~~~~~~~~~~~~~~~~~
 
-Urban microcell street-canyon pathloss model, from 3GPP standard 36.873.
-
 .. automodule:: UMi_pathloss_model
    :members:
    :special-members:
@@ -354,8 +354,6 @@ Urban microcell street-canyon pathloss model, from 3GPP standard 36.873.
 
 InH pathloss model
 ~~~~~~~~~~~~~~~~~~~
-
-3D-InH indoor pathloss model, from 3GPP standard 36.873.
 
 .. automodule:: InH_pathloss_model
    :members:
@@ -368,5 +366,35 @@ geometry_3d module
 .. automodule:: geometry_3d
    :members:
    :exclude-members: distance_to_plane,test_05,intersect_triangle
+
+Real-time plotting utility
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is independent of the main simulator code.  It reads output from the Logger via a pipe from stdin, and plots it using a matplotlib animation. It is driven with command-line options, which can be seen by running ``realtime_plotter.py --help``.
+
+.. code-block:: text
+
+  -h, --help            show this help message and exit
+  --selftest            self-test
+  -naxes NAXES          number of axes
+  -nplots NPLOTS        number of plots
+  -tmax TMAX            t_max
+  -xlabel XLABEL        x axis label
+  -fst FST              final sleep time
+  -fnb FNB              filename base
+  -ylims YLIMS          y limits (dict)
+  -ylabels YLABELS      ylabels (dict)
+  -title TITLE          figure title
+  -lw LW                plot linewidth
+  -author AUTHOR        author name for plot bottom margin
+  -extra EXTRA          extra features to be added to the plot; raw python code
+  -inputfile INPUTFILE  file to read input from instead of stdin; in this case the plot is not displayed, but written to an mp4 file
+  -column_to_axis_map COLUMN_TO_AXIS_MAP column_to_axis_map (dict)
+
+..
+  .. argparse::
+     :module: realtime_plotter
+     :func: main
+     :prog: realtime_plotter
 
 Last modified: |today|

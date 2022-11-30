@@ -39,24 +39,30 @@
 </div>
 <div class="section" id="aimm-simulator-documentation">
 <h1>AIMM simulator documentation<a class="headerlink" href="#aimm-simulator-documentation" title="Permalink to this headline">¶</a></h1>
-<p>Last modified: 2022-11-14T10:53</p>
+<p>Last modified: 2022-11-30T09:59</p>
 <div class="section" id="purpose">
 <h2>Purpose<a class="headerlink" href="#purpose" title="Permalink to this headline">¶</a></h2>
-<p>The AIMM simulator emulates a cellular radio system roughly following 5G concepts and channel models.   The intention is to have an easy-to-use and fast system written in pure Python with minimal dependencies. It is especially designed to be suitable for interfacing to AI engines such as <code class="docutils literal notranslate"><span class="pre">tensorflow</span></code> or <code class="docutils literal notranslate"><span class="pre">pytorch</span></code>, and it is not a principal aim for it to be extremely accurate at the level of the radio channel. The simulator was developed for the <a class="reference external" href="https://aimm.celticnext.eu">AIMM project</a>.</p>
+<p>The AIMM simulator emulates a cellular radio system roughly following 5G concepts and channel models. The intention is to have an easy-to-use and fast system written in pure Python with minimal dependencies. It is especially designed to be suitable for interfacing to AI engines such as <code class="docutils literal notranslate"><span class="pre">tensorflow</span></code> or <code class="docutils literal notranslate"><span class="pre">pytorch</span></code>, and it is not a principal aim for it to be extremely accurate at the level of the radio channel. The simulator was developed for the <a class="reference external" href="https://aimm.celticnext.eu">AIMM project</a>.</p>
+<p>The github sources are at &lt;<a class="reference external" href="https://github.com/keithbriggs/AIMM-simulator">https://github.com/keithbriggs/AIMM-simulator</a>&gt;.</p>
 </div>
-<div class="section" id="software-prerequisites">
-<h2>Software prerequisites<a class="headerlink" href="#software-prerequisites" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="software-dependencies">
+<h2>Software dependencies<a class="headerlink" href="#software-dependencies" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
-<li><a class="reference external" href="https://python.org">Python 3.8 or higher</a>.</li>
-<li><a class="reference external" href="https://numpy.org/">NumPy</a>. This normally comes with python distributions.</li>
-<li><a class="reference external" href="https://pypi.org/project/simpy/">Simpy</a>.   This will need to be installed, e.g. with <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">simpy</span></code>.</li>
+<li><a class="reference external" href="https://python.org">Python 3.8</a> or higher.</li>
+<li><a class="reference external" href="https://numpy.org/">NumPy</a>.</li>
+<li><a class="reference external" href="https://pypi.org/project/simpy/">Simpy</a>.</li>
 <li>If real-time plotting is needed, <a class="reference external" href="https://matplotlib.org">matplotlib</a>, with an appropriate backend such as PyQt5 (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">PyQt5</span></code>).</li>
 </ol>
 </div>
 <div class="section" id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
-<p>Downloading the wheel (typically <code class="docutils literal notranslate"><span class="pre">dist/aimm_simulator-2.0.0-py3-none-any.whl</span></code>) and running <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&lt;wheel&gt;</span></code> should be all that is needed.</p>
-<p>After the install, test it with <code class="docutils literal notranslate"><span class="pre">python3</span> <span class="pre">examples/basic_test.py</span></code>.</p>
+<p>Three ways are possible:</p>
+<ul class="simple">
+<li>The simplest way, direct from PyPI: <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">AIMM-simulator</span></code>. This will not always get the latest version.</li>
+<li>Download the wheel, typically <code class="docutils literal notranslate"><span class="pre">dist/aimm_simulator-2.0.0-py3-none-any.whl</span></code> from github, and run <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&lt;wheel&gt;</span></code>.</li>
+<li>Alternatively, the package can be installed by downloading the complete repository (using the green <code class="docutils literal notranslate"><span class="pre">&lt;&gt;</span> <span class="pre">Code</span> <span class="pre">⌄</span></code> button) as a zip, unpacking it, and then doing <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install_local</span></code> from inside the unpacked zip.</li>
+</ul>
+<p>After installation, run a test with <code class="docutils literal notranslate"><span class="pre">python3</span> <span class="pre">examples/basic_test.py</span></code>.</p>
 <p>Note that a plotting utility <code class="docutils literal notranslate"><span class="pre">src/realtime_plotter.py</span></code> is included but not installed.  If needed, this script should be placed somewhere in your python path.
 A folder <code class="docutils literal notranslate"><span class="pre">img</span></code> is used by the examples to save plots in png and pdf format.  So in order to run the examples with plotting, this folder must be created.</p>
 <p>The documentation can be built from the sources with <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">doc</span></code>.</p>
@@ -118,7 +124,6 @@ UE[0]   is at [602.14 403.7    2.  ]
 UE[1]   is at [263.87 301.28   2.  ]
 UE[2]   is at [319.12 506.63   2.  ]
 UE[3]   is at [370.7  394.92   2.  ]
-KDTree built.
 Sim: starting main loop for simulation time 100 seconds...
 0     0       15
 0     1       15
@@ -869,7 +874,7 @@ Typical usage would be in a bash script like this:</p>
 <span class="normal"> 8</span>
 <span class="normal"> 9</span>
 <span class="normal">10</span></pre></div></td><td class="code"><div><pre><span></span>python3 AIMM_simulator_RIC_example_01.py <span class="p">|</span> <span class="se">\</span>
-   ./realtime_plotter_06a.py <span class="se">\</span>
+   ./realtime_plotter.py <span class="se">\</span>
    -author<span class="o">=</span><span class="s1">&#39;Keith Briggs&#39;</span> <span class="se">\</span>
    -nplots<span class="o">=</span><span class="m">7</span> <span class="se">\</span>
    -tmax<span class="o">=</span><span class="m">10000</span> <span class="se">\</span>
@@ -889,10 +894,9 @@ Typical usage would be in a bash script like this:</p>
 <h2>Simulator module API reference<a class="headerlink" href="#simulator-module-api-reference" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="module-AIMM_simulator">
 <span id="aimm-simulator"></span><h3>AIMM simulator<a class="headerlink" href="#module-AIMM_simulator" title="Permalink to this headline">¶</a></h3>
-<p>The AIMM simulator emulates a cellular radio system roughly following 5G concepts and channel models.</p>
 <dl class="class">
 <dt id="AIMM_simulator.Sim">
-<em class="property">class </em><code class="descclassname">AIMM_simulator.</code><code class="descname">Sim</code><span class="sig-paren">(</span><em>params={'fc_GHz': 3.5</em>, <em>'h_BS': 20.0</em>, <em>'h_UT': 2.0}</em>, <em>show_params=True</em>, <em>rng_seed=0</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Sim" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">AIMM_simulator.</code><code class="descname">Sim</code><span class="sig-paren">(</span><em>params={'fc_GHz': 3.5</em>, <em>'h_BS': 20.0</em>, <em>'h_UT': 2.0}</em>, <em>show_params=True</em>, <em>rng_seed=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Sim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Sim" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class representing the complete simulation.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -904,49 +908,49 @@ Typical usage would be in a bash script like this:</p>
 </table>
 <dl class="method">
 <dt id="AIMM_simulator.Sim.add_MME">
-<code class="descname">add_MME</code><span class="sig-paren">(</span><em>mme</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Sim.add_MME" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_MME</code><span class="sig-paren">(</span><em>mme</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Sim.add_MME"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Sim.add_MME" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add an MME instance to the simulation.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Sim.add_logger">
-<code class="descname">add_logger</code><span class="sig-paren">(</span><em>logger</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Sim.add_logger" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_logger</code><span class="sig-paren">(</span><em>logger</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Sim.add_logger"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Sim.add_logger" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a logger to the simulation.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Sim.add_loggers">
-<code class="descname">add_loggers</code><span class="sig-paren">(</span><em>loggers</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Sim.add_loggers" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_loggers</code><span class="sig-paren">(</span><em>loggers</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Sim.add_loggers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Sim.add_loggers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a sequence of loggers to the simulation.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Sim.add_ric">
-<code class="descname">add_ric</code><span class="sig-paren">(</span><em>ric</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Sim.add_ric" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_ric</code><span class="sig-paren">(</span><em>ric</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Sim.add_ric"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Sim.add_ric" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a RIC instance to the simulation.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Sim.add_scenario">
-<code class="descname">add_scenario</code><span class="sig-paren">(</span><em>scenario</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Sim.add_scenario" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_scenario</code><span class="sig-paren">(</span><em>scenario</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Sim.add_scenario"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Sim.add_scenario" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a Scenario instance to the simulation.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Sim.get_UE_position">
-<code class="descname">get_UE_position</code><span class="sig-paren">(</span><em>ue_i</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Sim.get_UE_position" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_UE_position</code><span class="sig-paren">(</span><em>ue_i</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Sim.get_UE_position"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Sim.get_UE_position" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the xyz position of UE[i] in the simulation.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Sim.get_average_throughput">
-<code class="descname">get_average_throughput</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Sim.get_average_throughput" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_average_throughput</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Sim.get_average_throughput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Sim.get_average_throughput" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the average throughput over all UEs attached to all cells.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Sim.get_best_rsrp_cell">
-<code class="descname">get_best_rsrp_cell</code><span class="sig-paren">(</span><em>ue_i</em>, <em>dbg=False</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Sim.get_best_rsrp_cell" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_best_rsrp_cell</code><span class="sig-paren">(</span><em>ue_i</em>, <em>dbg=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Sim.get_best_rsrp_cell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Sim.get_best_rsrp_cell" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the index of the cell delivering the highest RSRP at UE[i].
 Relies on UE reports, and <code class="docutils literal notranslate"><span class="pre">None</span></code> is returned if there are not enough
 reports (yet) to determine the desired output.</p>
@@ -954,26 +958,26 @@ reports (yet) to determine the desired output.</p>
 
 <dl class="method">
 <dt id="AIMM_simulator.Sim.get_ncells">
-<code class="descname">get_ncells</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Sim.get_ncells" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_ncells</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Sim.get_ncells"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Sim.get_ncells" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the current number of cells in the simulation.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Sim.get_nearest_cell">
-<code class="descname">get_nearest_cell</code><span class="sig-paren">(</span><em>xy</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Sim.get_nearest_cell" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_nearest_cell</code><span class="sig-paren">(</span><em>xy</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Sim.get_nearest_cell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Sim.get_nearest_cell" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the index of the geographical nearest cell (in 2 dimensions)
 to the point xy.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Sim.get_nues">
-<code class="descname">get_nues</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Sim.get_nues" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_nues</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Sim.get_nues"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Sim.get_nues" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the current number of UEs in the simulation.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Sim.get_strongest_cell_simple_pathloss_model">
-<code class="descname">get_strongest_cell_simple_pathloss_model</code><span class="sig-paren">(</span><em>xyz</em>, <em>alpha=3.5</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Sim.get_strongest_cell_simple_pathloss_model" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_strongest_cell_simple_pathloss_model</code><span class="sig-paren">(</span><em>xyz</em>, <em>alpha=3.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Sim.get_strongest_cell_simple_pathloss_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Sim.get_strongest_cell_simple_pathloss_model" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the index of the cell delivering the strongest signal
 at the point xyz (in 3 dimensions), with pathloss exponent alpha.
 Note: antenna pattern is not used, so this function is deprecated,
@@ -982,19 +986,19 @@ but is adequate for initial UE attachment.</p>
 
 <dl class="method">
 <dt id="AIMM_simulator.Sim.make_UE">
-<code class="descname">make_UE</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Sim.make_UE" title="Permalink to this definition">¶</a></dt>
+<code class="descname">make_UE</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Sim.make_UE"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Sim.make_UE" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convenience function: make a new UE instance and add it to the simulation; parameters as for the UE class. Return the new UE instance.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Sim.make_cell">
-<code class="descname">make_cell</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Sim.make_cell" title="Permalink to this definition">¶</a></dt>
+<code class="descname">make_cell</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Sim.make_cell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Sim.make_cell" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convenience function: make a new Cell instance and add it to the simulation; parameters as for the Cell class. Return the new Cell instance.  It is assumed that Cells never move after being created (i.e. the initial xyz[1] stays the same throughout the simulation).</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Sim.wait">
-<code class="descname">wait</code><span class="sig-paren">(</span><em>interval=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Sim.wait" title="Permalink to this definition">¶</a></dt>
+<code class="descname">wait</code><span class="sig-paren">(</span><em>interval=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Sim.wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Sim.wait" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convenience function to avoid low-level reference to env.timeout().
 <code class="docutils literal notranslate"><span class="pre">loop</span></code> functions in each class must yield this.</p>
 </dd></dl>
@@ -1003,7 +1007,7 @@ but is adequate for initial UE attachment.</p>
 
 <dl class="class">
 <dt id="AIMM_simulator.Cell">
-<em class="property">class </em><code class="descclassname">AIMM_simulator.</code><code class="descname">Cell</code><span class="sig-paren">(</span><em>sim</em>, <em>interval=10.0</em>, <em>bw_MHz=10.0</em>, <em>n_subbands=1</em>, <em>xyz=None</em>, <em>h_BS=20.0</em>, <em>power_dBm=30.0</em>, <em>MIMO_gain_dB=0.0</em>, <em>pattern=None</em>, <em>f_callback=None</em>, <em>f_callback_kwargs={}</em>, <em>verbosity=0</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Cell" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">AIMM_simulator.</code><code class="descname">Cell</code><span class="sig-paren">(</span><em>sim</em>, <em>interval=10.0</em>, <em>bw_MHz=10.0</em>, <em>n_subbands=1</em>, <em>xyz=None</em>, <em>h_BS=20.0</em>, <em>power_dBm=30.0</em>, <em>MIMO_gain_dB=0.0</em>, <em>pattern=None</em>, <em>f_callback=None</em>, <em>f_callback_kwargs={}</em>, <em>verbosity=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Cell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Cell" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class representing a single Cell (gNB).  As instances are created, the are automatically given indices starting from 0.  This index is available as the data member <code class="docutils literal notranslate"><span class="pre">cell.i</span></code>.   The variable <code class="docutils literal notranslate"><span class="pre">Cell.i</span></code> is always the current number of cells.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1018,7 +1022,7 @@ but is adequate for initial UE attachment.</p>
 <li><strong>h_BS</strong> (<em>float</em>) – Antenna height in metres; only used if xyz is not provided.</li>
 <li><strong>power_dBm</strong> (<em>float</em>) – Transmit power in dBm.</li>
 <li><strong>MIMO_gain_dB</strong> (<em>float</em>) – Effective power gain from MIMO in dB.  This is no more than a crude way to
-estimate the performance gain from using MIMO.  A typical[1] might be 3dB for 2x2 MIMO.</li>
+estimate the performance gain from using MIMO.  A typical value might be 3dB for 2x2 MIMO.</li>
 <li><strong>pattern</strong> (<em>array</em><em> or </em><em>function</em>) – If an array, then a 360-element array giving the antenna gain in dB in 1-degree increments (0=east, then counterclockwise).  Otherwise, a function giving the antenna gain in dB in the direction theta=(180/pi)*atan2(y,x).</li>
 <li><strong>f_callback</strong> – A function with signature <code class="docutils literal notranslate"><span class="pre">f_callback(self,kwargs)</span></code>, which will be called
 at each iteration of the main loop.</li>
@@ -1030,7 +1034,7 @@ at each iteration of the main loop.</li>
 </table>
 <dl class="method">
 <dt id="AIMM_simulator.Cell.boost_power_dBm">
-<code class="descname">boost_power_dBm</code><span class="sig-paren">(</span><em>p</em>, <em>mn=None</em>, <em>mx=None</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Cell.boost_power_dBm" title="Permalink to this definition">¶</a></dt>
+<code class="descname">boost_power_dBm</code><span class="sig-paren">(</span><em>p</em>, <em>mn=None</em>, <em>mx=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Cell.boost_power_dBm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Cell.boost_power_dBm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Increase or decrease (if p&lt;0) the transmit power in dBm to be used by this cell.
 If mn is not <code class="docutils literal notranslate"><span class="pre">None</span></code>, then the power will not be set if it falls below mn.
 If mx is not <code class="docutils literal notranslate"><span class="pre">None</span></code>, then the power will not be set if it exceeds mx.
@@ -1039,109 +1043,109 @@ Return the new power.</p>
 
 <dl class="method">
 <dt id="AIMM_simulator.Cell.get_RSRP_reports">
-<code class="descname">get_RSRP_reports</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Cell.get_RSRP_reports" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_RSRP_reports</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Cell.get_RSRP_reports"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Cell.get_RSRP_reports" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the current RSRP reports to this cell, as a list of tuples (ue.i, rsrp).</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Cell.get_RSRP_reports_dict">
-<code class="descname">get_RSRP_reports_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Cell.get_RSRP_reports_dict" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_RSRP_reports_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Cell.get_RSRP_reports_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Cell.get_RSRP_reports_dict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the current RSRP reports to this cell, as a dictionary ue.i: rsrp.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Cell.get_UE_CQI">
-<code class="descname">get_UE_CQI</code><span class="sig-paren">(</span><em>ue_i</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Cell.get_UE_CQI" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_UE_CQI</code><span class="sig-paren">(</span><em>ue_i</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Cell.get_UE_CQI"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Cell.get_UE_CQI" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the current CQI of UE[i] in the simulation, as an array across all subbands.  An array of NaNs is returned if there is no report.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Cell.get_UE_throughput">
-<code class="descname">get_UE_throughput</code><span class="sig-paren">(</span><em>ue_i</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Cell.get_UE_throughput" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_UE_throughput</code><span class="sig-paren">(</span><em>ue_i</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Cell.get_UE_throughput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Cell.get_UE_throughput" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the total current throughput in Mb/s of UE[i] in the simulation.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Cell.get_average_throughput">
-<code class="descname">get_average_throughput</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Cell.get_average_throughput" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_average_throughput</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Cell.get_average_throughput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Cell.get_average_throughput" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the average throughput over all UEs attached to this cell.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Cell.get_nattached">
-<code class="descname">get_nattached</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Cell.get_nattached" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_nattached</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Cell.get_nattached"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Cell.get_nattached" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the current number of UEs attached to this Cell.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Cell.get_power_dBm">
-<code class="descname">get_power_dBm</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Cell.get_power_dBm" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_power_dBm</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Cell.get_power_dBm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Cell.get_power_dBm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the transmit power in dBm currently used by this cell.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Cell.get_rsrp">
-<code class="descname">get_rsrp</code><span class="sig-paren">(</span><em>i</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Cell.get_rsrp" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_rsrp</code><span class="sig-paren">(</span><em>i</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Cell.get_rsrp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Cell.get_rsrp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return last RSRP reported to this cell by UE[i].</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Cell.get_rsrp_history">
-<code class="descname">get_rsrp_history</code><span class="sig-paren">(</span><em>i</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Cell.get_rsrp_history" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_rsrp_history</code><span class="sig-paren">(</span><em>i</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Cell.get_rsrp_history"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Cell.get_rsrp_history" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return an array of the last 10 RSRP[1]s reported to this cell by UE[i].</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Cell.get_subband_mask">
-<code class="descname">get_subband_mask</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Cell.get_subband_mask" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_subband_mask</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Cell.get_subband_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Cell.get_subband_mask" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the current subband mask.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Cell.get_xyz">
-<code class="descname">get_xyz</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Cell.get_xyz" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_xyz</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Cell.get_xyz"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Cell.get_xyz" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the current position of this Cell.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Cell.loop">
-<code class="descname">loop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Cell.loop" title="Permalink to this definition">¶</a></dt>
+<code class="descname">loop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Cell.loop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Cell.loop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Main loop of Cell class.  Default: do nothing.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Cell.set_MIMO_gain">
-<code class="descname">set_MIMO_gain</code><span class="sig-paren">(</span><em>MIMO_gain_dB</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Cell.set_MIMO_gain" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_MIMO_gain</code><span class="sig-paren">(</span><em>MIMO_gain_dB</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Cell.set_MIMO_gain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Cell.set_MIMO_gain" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the MIMO gain in dB to be used by this cell.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Cell.set_f_callback">
-<code class="descname">set_f_callback</code><span class="sig-paren">(</span><em>f_callback</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Cell.set_f_callback" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add a callack function to the main loop of this Cell</p>
+<code class="descname">set_f_callback</code><span class="sig-paren">(</span><em>f_callback</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Cell.set_f_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Cell.set_f_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a callback function to the main loop of this Cell</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Cell.set_pattern">
-<code class="descname">set_pattern</code><span class="sig-paren">(</span><em>pattern</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Cell.set_pattern" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_pattern</code><span class="sig-paren">(</span><em>pattern</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Cell.set_pattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Cell.set_pattern" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the antenna radiation pattern.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Cell.set_power_dBm">
-<code class="descname">set_power_dBm</code><span class="sig-paren">(</span><em>p</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Cell.set_power_dBm" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_power_dBm</code><span class="sig-paren">(</span><em>p</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Cell.set_power_dBm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Cell.set_power_dBm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the transmit power in dBm to be used by this cell.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Cell.set_subband_mask">
-<code class="descname">set_subband_mask</code><span class="sig-paren">(</span><em>mask</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Cell.set_subband_mask" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_subband_mask</code><span class="sig-paren">(</span><em>mask</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Cell.set_subband_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Cell.set_subband_mask" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the subband mask to <code class="docutils literal notranslate"><span class="pre">mask</span></code>.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Cell.set_xyz">
-<code class="descname">set_xyz</code><span class="sig-paren">(</span><em>xyz</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Cell.set_xyz" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_xyz</code><span class="sig-paren">(</span><em>xyz</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Cell.set_xyz"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Cell.set_xyz" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set a new position for this Cell.</p>
 </dd></dl>
 
@@ -1149,7 +1153,7 @@ Return the new power.</p>
 
 <dl class="class">
 <dt id="AIMM_simulator.UE">
-<em class="property">class </em><code class="descclassname">AIMM_simulator.</code><code class="descname">UE</code><span class="sig-paren">(</span><em>sim</em>, <em>xyz=None</em>, <em>reporting_interval=1.0</em>, <em>pathloss_model=None</em>, <em>h_UT=2.0</em>, <em>f_callback=None</em>, <em>f_callback_kwargs={}</em>, <em>verbosity=0</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.UE" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">AIMM_simulator.</code><code class="descname">UE</code><span class="sig-paren">(</span><em>sim</em>, <em>xyz=None</em>, <em>reporting_interval=1.0</em>, <em>pathloss_model=None</em>, <em>h_UT=2.0</em>, <em>f_callback=None</em>, <em>f_callback_kwargs={}</em>, <em>verbosity=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#UE"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.UE" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represents a single UE. As instances are created, the are automatically given indices starting from 0.  This index is available as the data member <code class="docutils literal notranslate"><span class="pre">ue.i</span></code>.   The static (class-level) variable <code class="docutils literal notranslate"><span class="pre">UE.i</span></code> is always the current number of UEs.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1176,20 +1180,20 @@ See further <code class="docutils literal notranslate"><span class="pre">NR_5G_s
 </table>
 <dl class="method">
 <dt id="AIMM_simulator.UE.attach">
-<code class="descname">attach</code><span class="sig-paren">(</span><em>cell</em>, <em>quiet=True</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.UE.attach" title="Permalink to this definition">¶</a></dt>
+<code class="descname">attach</code><span class="sig-paren">(</span><em>cell</em>, <em>quiet=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#UE.attach"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.UE.attach" title="Permalink to this definition">¶</a></dt>
 <dd><p>Attach this UE to a specific Cell instance.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.UE.attach_to_nearest_cell">
-<code class="descname">attach_to_nearest_cell</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.UE.attach_to_nearest_cell" title="Permalink to this definition">¶</a></dt>
+<code class="descname">attach_to_nearest_cell</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#UE.attach_to_nearest_cell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.UE.attach_to_nearest_cell" title="Permalink to this definition">¶</a></dt>
 <dd><p>Attach this UE to the geographically nearest Cell instance.
 Intended for initial attachment only.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.UE.attach_to_strongest_cell_simple_pathloss_model">
-<code class="descname">attach_to_strongest_cell_simple_pathloss_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.UE.attach_to_strongest_cell_simple_pathloss_model" title="Permalink to this definition">¶</a></dt>
+<code class="descname">attach_to_strongest_cell_simple_pathloss_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#UE.attach_to_strongest_cell_simple_pathloss_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.UE.attach_to_strongest_cell_simple_pathloss_model" title="Permalink to this definition">¶</a></dt>
 <dd><p>Attach to the cell delivering the strongest signal
 at the current UE position. Intended for initial attachment only.
 Uses only a simple power-law pathloss model.  For proper handover
@@ -1198,50 +1202,50 @@ behaviour, use the MME module.</p>
 
 <dl class="method">
 <dt id="AIMM_simulator.UE.detach">
-<code class="descname">detach</code><span class="sig-paren">(</span><em>quiet=True</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.UE.detach" title="Permalink to this definition">¶</a></dt>
+<code class="descname">detach</code><span class="sig-paren">(</span><em>quiet=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#UE.detach"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.UE.detach" title="Permalink to this definition">¶</a></dt>
 <dd><p>Detach this UE from its serving cell.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.UE.get_CQI">
-<code class="descname">get_CQI</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.UE.get_CQI" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_CQI</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#UE.get_CQI"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.UE.get_CQI" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the current CQI of this UE, as an array across all subbands.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.UE.get_serving_cell">
-<code class="descname">get_serving_cell</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.UE.get_serving_cell" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_serving_cell</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#UE.get_serving_cell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.UE.get_serving_cell" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the current serving Cell object (not index) for this UE instance.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.UE.get_serving_cell_i">
-<code class="descname">get_serving_cell_i</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.UE.get_serving_cell_i" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_serving_cell_i</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#UE.get_serving_cell_i"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.UE.get_serving_cell_i" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the current serving Cell index for this UE instance.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.UE.get_xyz">
-<code class="descname">get_xyz</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.UE.get_xyz" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_xyz</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#UE.get_xyz"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.UE.get_xyz" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the current position of this UE.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.UE.loop">
-<code class="descname">loop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.UE.loop" title="Permalink to this definition">¶</a></dt>
+<code class="descname">loop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#UE.loop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.UE.loop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Main loop of UE class</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.UE.send_rsrp_reports">
-<code class="descname">send_rsrp_reports</code><span class="sig-paren">(</span><em>threshold=-120.0</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.UE.send_rsrp_reports" title="Permalink to this definition">¶</a></dt>
+<code class="descname">send_rsrp_reports</code><span class="sig-paren">(</span><em>threshold=-120.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#UE.send_rsrp_reports"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.UE.send_rsrp_reports" title="Permalink to this definition">¶</a></dt>
 <dd><p>Send RSRP reports in dBm to all cells for which it is over the threshold.
 Subbands not handled.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.UE.send_subband_cqi_report">
-<code class="descname">send_subband_cqi_report</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.UE.send_subband_cqi_report" title="Permalink to this definition">¶</a></dt>
+<code class="descname">send_subband_cqi_report</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#UE.send_subband_cqi_report"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.UE.send_subband_cqi_report" title="Permalink to this definition">¶</a></dt>
 <dd><p>For this UE, send an array of CQI reports, one for each subband; and a total throughput report, to the serving cell.
 What is sent is a 2-tuple (current time, array of reports).
 For RSRP reports, use the function <code class="docutils literal notranslate"><span class="pre">send_rsrp_reports</span></code>.
@@ -1250,13 +1254,13 @@ Also save the CQI[1]s in s.cqi, and return the throughput value.</p>
 
 <dl class="method">
 <dt id="AIMM_simulator.UE.set_f_callback">
-<code class="descname">set_f_callback</code><span class="sig-paren">(</span><em>f_callback</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.UE.set_f_callback" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_f_callback</code><span class="sig-paren">(</span><em>f_callback</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#UE.set_f_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.UE.set_f_callback" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a callack function to the main loop of this UE</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.UE.set_xyz">
-<code class="descname">set_xyz</code><span class="sig-paren">(</span><em>xyz</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.UE.set_xyz" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_xyz</code><span class="sig-paren">(</span><em>xyz</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#UE.set_xyz"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.UE.set_xyz" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set a new position for this UE.</p>
 </dd></dl>
 
@@ -1264,7 +1268,7 @@ Also save the CQI[1]s in s.cqi, and return the throughput value.</p>
 
 <dl class="class">
 <dt id="AIMM_simulator.Scenario">
-<em class="property">class </em><code class="descclassname">AIMM_simulator.</code><code class="descname">Scenario</code><span class="sig-paren">(</span><em>sim</em>, <em>func=None</em>, <em>interval=1.0</em>, <em>verbosity=0</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Scenario" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">AIMM_simulator.</code><code class="descname">Scenario</code><span class="sig-paren">(</span><em>sim</em>, <em>func=None</em>, <em>interval=1.0</em>, <em>verbosity=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Scenario"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Scenario" title="Permalink to this definition">¶</a></dt>
 <dd><p>Base class for a simulation scenario. The default does nothing.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1282,7 +1286,7 @@ Also save the CQI[1]s in s.cqi, and return the throughput value.</p>
 </table>
 <dl class="method">
 <dt id="AIMM_simulator.Scenario.loop">
-<code class="descname">loop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Scenario.loop" title="Permalink to this definition">¶</a></dt>
+<code class="descname">loop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Scenario.loop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Scenario.loop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Main loop of Scenario class.  Should be overridden to provide different functionalities.</p>
 </dd></dl>
 
@@ -1290,7 +1294,7 @@ Also save the CQI[1]s in s.cqi, and return the throughput value.</p>
 
 <dl class="class">
 <dt id="AIMM_simulator.MME">
-<em class="property">class </em><code class="descclassname">AIMM_simulator.</code><code class="descname">MME</code><span class="sig-paren">(</span><em>sim</em>, <em>interval=10.0</em>, <em>strategy='strongest_cell_simple_pathloss_model'</em>, <em>anti_pingpong=30.0</em>, <em>verbosity=0</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.MME" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">AIMM_simulator.</code><code class="descname">MME</code><span class="sig-paren">(</span><em>sim</em>, <em>interval=10.0</em>, <em>strategy='strongest_cell_simple_pathloss_model'</em>, <em>anti_pingpong=30.0</em>, <em>verbosity=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#MME"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.MME" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represents a MME, for handling UE handovers.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1309,20 +1313,20 @@ Also save the CQI[1]s in s.cqi, and return the throughput value.</p>
 </table>
 <dl class="method">
 <dt id="AIMM_simulator.MME.do_handovers">
-<code class="descname">do_handovers</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.MME.do_handovers" title="Permalink to this definition">¶</a></dt>
+<code class="descname">do_handovers</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#MME.do_handovers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.MME.do_handovers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check whether handovers are required, and do them if so.
 Normally called from loop(), but can be called manually if required.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.MME.finalize">
-<code class="descname">finalize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.MME.finalize" title="Permalink to this definition">¶</a></dt>
+<code class="descname">finalize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#MME.finalize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.MME.finalize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function called at end of simulation, to implement any required finalization actions.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.MME.loop">
-<code class="descname">loop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.MME.loop" title="Permalink to this definition">¶</a></dt>
+<code class="descname">loop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#MME.loop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.MME.loop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Main loop of MME.</p>
 </dd></dl>
 
@@ -1330,7 +1334,7 @@ Normally called from loop(), but can be called manually if required.</p>
 
 <dl class="class">
 <dt id="AIMM_simulator.RIC">
-<em class="property">class </em><code class="descclassname">AIMM_simulator.</code><code class="descname">RIC</code><span class="sig-paren">(</span><em>sim</em>, <em>interval=10</em>, <em>verbosity=0</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.RIC" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">AIMM_simulator.</code><code class="descname">RIC</code><span class="sig-paren">(</span><em>sim</em>, <em>interval=10</em>, <em>verbosity=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#RIC"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.RIC" title="Permalink to this definition">¶</a></dt>
 <dd><p>Base class for a RIC, for hosting xApps.  The default does nothing.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1347,13 +1351,13 @@ Normally called from loop(), but can be called manually if required.</p>
 </table>
 <dl class="method">
 <dt id="AIMM_simulator.RIC.finalize">
-<code class="descname">finalize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.RIC.finalize" title="Permalink to this definition">¶</a></dt>
+<code class="descname">finalize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#RIC.finalize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.RIC.finalize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function called at end of simulation, to implement any required finalization actions.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.RIC.loop">
-<code class="descname">loop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.RIC.loop" title="Permalink to this definition">¶</a></dt>
+<code class="descname">loop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#RIC.loop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.RIC.loop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Main loop of RIC class.  Must be overridden to provide functionality.</p>
 </dd></dl>
 
@@ -1361,7 +1365,7 @@ Normally called from loop(), but can be called manually if required.</p>
 
 <dl class="class">
 <dt id="AIMM_simulator.Logger">
-<em class="property">class </em><code class="descclassname">AIMM_simulator.</code><code class="descname">Logger</code><span class="sig-paren">(</span><em>sim</em>, <em>func=None</em>, <em>header=''</em>, <em>f=&lt;_io.TextIOWrapper name='&lt;stdout&gt;' mode='w' encoding='utf-8'&gt;</em>, <em>logging_interval=10</em>, <em>np_array_to_str=&lt;function np_array_to_str&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Logger" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">AIMM_simulator.</code><code class="descname">Logger</code><span class="sig-paren">(</span><em>sim</em>, <em>func=None</em>, <em>header=''</em>, <em>f=&lt;_io.TextIOWrapper name='&lt;stdout&gt;' mode='w' encoding='utf-8'&gt;</em>, <em>logging_interval=10</em>, <em>np_array_to_str=&lt;function np_array_to_str&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Logger"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Logger" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represents a simulation logger. Multiple loggers (each with their own file) can be used if desired.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1380,13 +1384,13 @@ Normally called from loop(), but can be called manually if required.</p>
 </table>
 <dl class="method">
 <dt id="AIMM_simulator.Logger.finalize">
-<code class="descname">finalize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Logger.finalize" title="Permalink to this definition">¶</a></dt>
+<code class="descname">finalize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Logger.finalize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Logger.finalize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function called at end of simulation, to implement any required finalization actions.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.Logger.loop">
-<code class="descname">loop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AIMM_simulator.Logger.loop" title="Permalink to this definition">¶</a></dt>
+<code class="descname">loop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Logger.loop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Logger.loop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Main loop of Logger class.
 Can be overridden to provide custom functionality.</p>
 </dd></dl>
@@ -1398,7 +1402,7 @@ Can be overridden to provide custom functionality.</p>
 <span id="nr-5g-standard-functions"></span><h3>NR 5G standard functions<a class="headerlink" href="#module-NR_5G_standard_functions" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
 <dt id="NR_5G_standard_functions.RSRP_report">
-<code class="descclassname">NR_5G_standard_functions.</code><code class="descname">RSRP_report</code><span class="sig-paren">(</span><em>rsrp_dBm</em><span class="sig-paren">)</span><a class="headerlink" href="#NR_5G_standard_functions.RSRP_report" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">NR_5G_standard_functions.</code><code class="descname">RSRP_report</code><span class="sig-paren">(</span><em>rsrp_dBm</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/NR_5G_standard_functions.html#RSRP_report"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#NR_5G_standard_functions.RSRP_report" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert RSRP report from dBm to standard range.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1416,16 +1420,15 @@ Can be overridden to provide custom functionality.</p>
 
 <dl class="class">
 <dt id="NR_5G_standard_functions.Radio_state">
-<em class="property">class </em><code class="descclassname">NR_5G_standard_functions.</code><code class="descname">Radio_state</code><span class="sig-paren">(</span><em>NofSlotsPerRadioFrame: int = 20</em>, <em>NofRadioFramePerSec: int = 100</em>, <em>NRB_sc: int = 12</em>, <em>Nsh_symb: int = 13</em>, <em>NPRB_oh: int = 0</em>, <em>nPRB: int = 273</em>, <em>Qm: int = 8</em>, <em>v: int = 4</em>, <em>R: float = 0.948</em>, <em>MCS: int = 20</em><span class="sig-paren">)</span><a class="headerlink" href="#NR_5G_standard_functions.Radio_state" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">NR_5G_standard_functions.</code><code class="descname">Radio_state</code><span class="sig-paren">(</span><em>NofSlotsPerRadioFrame: int = 20</em>, <em>NofRadioFramePerSec: int = 100</em>, <em>NRB_sc: int = 12</em>, <em>Nsh_symb: int = 13</em>, <em>NPRB_oh: int = 0</em>, <em>nPRB: int = 273</em>, <em>Qm: int = 8</em>, <em>v: int = 4</em>, <em>R: float = 0.948</em>, <em>MCS: int = 20</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/NR_5G_standard_functions.html#Radio_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#NR_5G_standard_functions.Radio_state" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </div>
-<div class="section" id="uma-pathloss-model">
-<h3>UMa pathloss model<a class="headerlink" href="#uma-pathloss-model" title="Permalink to this headline">¶</a></h3>
-<p>Urban macrocell dual-slope pathloss model, from 3GPP standard 36.873.</p>
-<span class="target" id="module-UMa_pathloss_model"></span><dl class="class">
+<div class="section" id="module-UMa_pathloss_model">
+<span id="uma-pathloss-model"></span><h3>UMa pathloss model<a class="headerlink" href="#module-UMa_pathloss_model" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
 <dt id="UMa_pathloss_model.UMa_pathloss">
-<em class="property">class </em><code class="descclassname">UMa_pathloss_model.</code><code class="descname">UMa_pathloss</code><span class="sig-paren">(</span><em>fc_GHz=3.5</em>, <em>h_UT=2.0</em>, <em>h_BS=25.0</em>, <em>LOS=True</em>, <em>h=20.0</em>, <em>W=20.0</em><span class="sig-paren">)</span><a class="headerlink" href="#UMa_pathloss_model.UMa_pathloss" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">UMa_pathloss_model.</code><code class="descname">UMa_pathloss</code><span class="sig-paren">(</span><em>fc_GHz=3.5</em>, <em>h_UT=2.0</em>, <em>h_BS=25.0</em>, <em>LOS=True</em>, <em>h=20.0</em>, <em>W=20.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/UMa_pathloss_model.html#UMa_pathloss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#UMa_pathloss_model.UMa_pathloss" title="Permalink to this definition">¶</a></dt>
 <dd><p>Urban macrocell dual-slope pathloss model, from 3GPP standard 36.873,
 Table 7.2-1.</p>
 <p>The model is defined in 36873-c70.doc from <a class="reference external" href="https://portal.3gpp.org/desktopmodules/Specifications/SpecificationDetails.aspx?specificationId=2574">https://portal.3gpp.org/desktopmodules/Specifications/SpecificationDetails.aspx?specificationId=2574</a>.</p>
@@ -1435,7 +1438,7 @@ LOS    = line-of-sight.
 NLOS   = non-line-of-sight.</p>
 <dl class="method">
 <dt id="UMa_pathloss_model.UMa_pathloss.__call__">
-<code class="descname">__call__</code><span class="sig-paren">(</span><em>xyz_cell</em>, <em>xyz_UE</em><span class="sig-paren">)</span><a class="headerlink" href="#UMa_pathloss_model.UMa_pathloss.__call__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>xyz_cell</em>, <em>xyz_UE</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/UMa_pathloss_model.html#UMa_pathloss.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#UMa_pathloss_model.UMa_pathloss.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the pathloss between 3-dimensional positions xyz_cell and
 xyz_UE (in metres).
 Note that the distances, building heights, etc. are not checked
@@ -1444,7 +1447,7 @@ to ensure that this pathloss model is actually applicable.</p>
 
 <dl class="method">
 <dt id="UMa_pathloss_model.UMa_pathloss.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>fc_GHz=3.5</em>, <em>h_UT=2.0</em>, <em>h_BS=25.0</em>, <em>LOS=True</em>, <em>h=20.0</em>, <em>W=20.0</em><span class="sig-paren">)</span><a class="headerlink" href="#UMa_pathloss_model.UMa_pathloss.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>fc_GHz=3.5</em>, <em>h_UT=2.0</em>, <em>h_BS=25.0</em>, <em>LOS=True</em>, <em>h=20.0</em>, <em>W=20.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/UMa_pathloss_model.html#UMa_pathloss.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#UMa_pathloss_model.UMa_pathloss.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a pathloss model instance.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1468,17 +1471,16 @@ to ensure that this pathloss model is actually applicable.</p>
 
 <dl class="function">
 <dt id="UMa_pathloss_model.plot">
-<code class="descclassname">UMa_pathloss_model.</code><code class="descname">plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#UMa_pathloss_model.plot" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">UMa_pathloss_model.</code><code class="descname">plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/UMa_pathloss_model.html#plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#UMa_pathloss_model.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot the pathloss model predictions, as a self-test.</p>
 </dd></dl>
 
 </div>
-<div class="section" id="umi-pathloss-model">
-<h3>UMi pathloss model<a class="headerlink" href="#umi-pathloss-model" title="Permalink to this headline">¶</a></h3>
-<p>Urban microcell street-canyon pathloss model, from 3GPP standard 36.873.</p>
-<span class="target" id="module-UMi_pathloss_model"></span><dl class="class">
+<div class="section" id="module-UMi_pathloss_model">
+<span id="umi-pathloss-model"></span><h3>UMi pathloss model<a class="headerlink" href="#module-UMi_pathloss_model" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
 <dt id="UMi_pathloss_model.UMi_streetcanyon_pathloss">
-<em class="property">class </em><code class="descclassname">UMi_pathloss_model.</code><code class="descname">UMi_streetcanyon_pathloss</code><span class="sig-paren">(</span><em>fc_GHz=3.5</em>, <em>h_UT=2.0</em>, <em>h_BS=10.0</em>, <em>LOS=True</em><span class="sig-paren">)</span><a class="headerlink" href="#UMi_pathloss_model.UMi_streetcanyon_pathloss" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">UMi_pathloss_model.</code><code class="descname">UMi_streetcanyon_pathloss</code><span class="sig-paren">(</span><em>fc_GHz=3.5</em>, <em>h_UT=2.0</em>, <em>h_BS=10.0</em>, <em>LOS=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/UMi_pathloss_model.html#UMi_streetcanyon_pathloss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#UMi_pathloss_model.UMi_streetcanyon_pathloss" title="Permalink to this definition">¶</a></dt>
 <dd><p>Urban microcell dual-slope pathloss model, from 3GPP standard 36.873,
 Table 7.2-1.
 The model is defined in 36873-c70.doc from <a class="reference external" href="https://portal.3gpp.org/desktopmodules/Specifications/SpecificationDetails.aspx?specificationId=2574">https://portal.3gpp.org/desktopmodules/Specifications/SpecificationDetails.aspx?specificationId=2574</a>.
@@ -1488,7 +1490,7 @@ LOS    = line-of-sight.
 NLOS   = non-line-of-sight.</p>
 <dl class="method">
 <dt id="UMi_pathloss_model.UMi_streetcanyon_pathloss.__call__">
-<code class="descname">__call__</code><span class="sig-paren">(</span><em>xyz_cell</em>, <em>xyz_UE</em><span class="sig-paren">)</span><a class="headerlink" href="#UMi_pathloss_model.UMi_streetcanyon_pathloss.__call__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>xyz_cell</em>, <em>xyz_UE</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/UMi_pathloss_model.html#UMi_streetcanyon_pathloss.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#UMi_pathloss_model.UMi_streetcanyon_pathloss.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the pathloss between 3-dimensional positions xyz_cell and
 xyz_UE (in metres).
 Note that the distances, building heights, etc. are not checked
@@ -1497,7 +1499,7 @@ to ensure that this pathloss model is actually applicable.</p>
 
 <dl class="method">
 <dt id="UMi_pathloss_model.UMi_streetcanyon_pathloss.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>fc_GHz=3.5</em>, <em>h_UT=2.0</em>, <em>h_BS=10.0</em>, <em>LOS=True</em><span class="sig-paren">)</span><a class="headerlink" href="#UMi_pathloss_model.UMi_streetcanyon_pathloss.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>fc_GHz=3.5</em>, <em>h_UT=2.0</em>, <em>h_BS=10.0</em>, <em>LOS=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/UMi_pathloss_model.html#UMi_streetcanyon_pathloss.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#UMi_pathloss_model.UMi_streetcanyon_pathloss.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a pathloss model instance.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1519,17 +1521,16 @@ to ensure that this pathloss model is actually applicable.</p>
 
 <dl class="function">
 <dt id="UMi_pathloss_model.plot">
-<code class="descclassname">UMi_pathloss_model.</code><code class="descname">plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#UMi_pathloss_model.plot" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">UMi_pathloss_model.</code><code class="descname">plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/UMi_pathloss_model.html#plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#UMi_pathloss_model.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot the pathloss model predictions, as a self-test.</p>
 </dd></dl>
 
 </div>
-<div class="section" id="inh-pathloss-model">
-<h3>InH pathloss model<a class="headerlink" href="#inh-pathloss-model" title="Permalink to this headline">¶</a></h3>
-<p>3D-InH indoor pathloss model, from 3GPP standard 36.873.</p>
-<span class="target" id="module-InH_pathloss_model"></span><dl class="class">
+<div class="section" id="module-InH_pathloss_model">
+<span id="inh-pathloss-model"></span><h3>InH pathloss model<a class="headerlink" href="#module-InH_pathloss_model" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
 <dt id="InH_pathloss_model.InH_pathloss">
-<em class="property">class </em><code class="descclassname">InH_pathloss_model.</code><code class="descname">InH_pathloss</code><span class="sig-paren">(</span><em>fc_GHz=3.5</em>, <em>h_UT=2.0</em>, <em>h_BS=4.0</em>, <em>LOS=True</em><span class="sig-paren">)</span><a class="headerlink" href="#InH_pathloss_model.InH_pathloss" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">InH_pathloss_model.</code><code class="descname">InH_pathloss</code><span class="sig-paren">(</span><em>fc_GHz=3.5</em>, <em>h_UT=2.0</em>, <em>h_BS=4.0</em>, <em>LOS=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InH_pathloss_model.html#InH_pathloss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InH_pathloss_model.InH_pathloss" title="Permalink to this definition">¶</a></dt>
 <dd><p>3D-InH indoor pathloss model, from 3GPP standard 36.873, Table 7.2-1.
 Indoor Hotspot cell with high (indoor) UE density.</p>
 <p>The model is defined in 36873-c70.doc from <a class="reference external" href="https://portal.3gpp.org/desktopmodules/Specifications/SpecificationDetails.aspx?specificationId=2574">https://portal.3gpp.org/desktopmodules/Specifications/SpecificationDetails.aspx?specificationId=2574</a>.</p>
@@ -1537,7 +1538,7 @@ Indoor Hotspot cell with high (indoor) UE density.</p>
 NLOS   = non-line-of-sight.</p>
 <dl class="method">
 <dt id="InH_pathloss_model.InH_pathloss.__call__">
-<code class="descname">__call__</code><span class="sig-paren">(</span><em>xyz_cell</em>, <em>xyz_UE</em><span class="sig-paren">)</span><a class="headerlink" href="#InH_pathloss_model.InH_pathloss.__call__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>xyz_cell</em>, <em>xyz_UE</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InH_pathloss_model.html#InH_pathloss.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InH_pathloss_model.InH_pathloss.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the pathloss between 3-dimensional positions xyz_cell and
 xyz_UE (in metres).
 Note that the distances, heights, etc. are not checked
@@ -1546,7 +1547,7 @@ to ensure that this pathloss model is actually applicable.</p>
 
 <dl class="method">
 <dt id="InH_pathloss_model.InH_pathloss.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>fc_GHz=3.5</em>, <em>h_UT=2.0</em>, <em>h_BS=4.0</em>, <em>LOS=True</em><span class="sig-paren">)</span><a class="headerlink" href="#InH_pathloss_model.InH_pathloss.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>fc_GHz=3.5</em>, <em>h_UT=2.0</em>, <em>h_BS=4.0</em>, <em>LOS=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InH_pathloss_model.html#InH_pathloss.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InH_pathloss_model.InH_pathloss.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a pathloss model instance.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1567,7 +1568,7 @@ to ensure that this pathloss model is actually applicable.</p>
 
 <dl class="function">
 <dt id="InH_pathloss_model.plot">
-<code class="descclassname">InH_pathloss_model.</code><code class="descname">plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#InH_pathloss_model.plot" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">InH_pathloss_model.</code><code class="descname">plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/InH_pathloss_model.html#plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InH_pathloss_model.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot the pathloss model predictions, as a self-test.</p>
 </dd></dl>
 
@@ -1576,35 +1577,35 @@ to ensure that this pathloss model is actually applicable.</p>
 <span id="geometry-3d-module"></span><h3>geometry_3d module<a class="headerlink" href="#module-geometry_3d" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="geometry_3d.Building">
-<em class="property">class </em><code class="descclassname">geometry_3d.</code><code class="descname">Building</code><span class="sig-paren">(</span><em>panels</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry_3d.Building" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">geometry_3d.</code><code class="descname">Building</code><span class="sig-paren">(</span><em>panels</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geometry_3d.html#Building"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#geometry_3d.Building" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represents a collection of panels making up a building.</p>
 </dd></dl>
 
 <dl class="class">
 <dt id="geometry_3d.Panel">
-<em class="property">class </em><code class="descclassname">geometry_3d.</code><code class="descname">Panel</code><span class="sig-paren">(</span><em>triangles</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry_3d.Panel" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">geometry_3d.</code><code class="descname">Panel</code><span class="sig-paren">(</span><em>triangles</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geometry_3d.html#Panel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#geometry_3d.Panel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represents a collection of triangles (which must be parallel) making up a single flat wall panel.</p>
 </dd></dl>
 
 <dl class="class">
 <dt id="geometry_3d.Plane">
-<em class="property">class </em><code class="descclassname">geometry_3d.</code><code class="descname">Plane</code><span class="sig-paren">(</span><em>point</em>, <em>normal</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry_3d.Plane" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">geometry_3d.</code><code class="descname">Plane</code><span class="sig-paren">(</span><em>point</em>, <em>normal</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geometry_3d.html#Plane"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#geometry_3d.Plane" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represents an infinite plane, defined by a point on the plane and a normal vector</p>
 </dd></dl>
 
 <dl class="class">
 <dt id="geometry_3d.RIS">
-<em class="property">class </em><code class="descclassname">geometry_3d.</code><code class="descname">RIS</code><span class="sig-paren">(</span><em>panel</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry_3d.RIS" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">geometry_3d.</code><code class="descname">RIS</code><span class="sig-paren">(</span><em>panel</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geometry_3d.html#RIS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#geometry_3d.RIS" title="Permalink to this definition">¶</a></dt>
 <dd><p>TODO a RIS.</p>
 </dd></dl>
 
 <dl class="class">
 <dt id="geometry_3d.Ray">
-<em class="property">class </em><code class="descclassname">geometry_3d.</code><code class="descname">Ray</code><span class="sig-paren">(</span><em>tail</em>, <em>dv</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry_3d.Ray" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">geometry_3d.</code><code class="descname">Ray</code><span class="sig-paren">(</span><em>tail</em>, <em>dv</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geometry_3d.html#Ray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#geometry_3d.Ray" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represents a ray, defined by a tail (starting point) and a direction vector</p>
 <dl class="method">
 <dt id="geometry_3d.Ray.plot">
-<code class="descname">plot</code><span class="sig-paren">(</span><em>ax</em>, <em>length=1.0</em>, <em>color='b'</em>, <em>alpha=0.5</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry_3d.Ray.plot" title="Permalink to this definition">¶</a></dt>
+<code class="descname">plot</code><span class="sig-paren">(</span><em>ax</em>, <em>length=1.0</em>, <em>color='b'</em>, <em>alpha=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geometry_3d.html#Ray.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#geometry_3d.Ray.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plots the ray in 3d</p>
 </dd></dl>
 
@@ -1612,11 +1613,11 @@ to ensure that this pathloss model is actually applicable.</p>
 
 <dl class="class">
 <dt id="geometry_3d.Triangle">
-<em class="property">class </em><code class="descclassname">geometry_3d.</code><code class="descname">Triangle</code><span class="sig-paren">(</span><em>p0</em>, <em>p1</em>, <em>p2</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry_3d.Triangle" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">geometry_3d.</code><code class="descname">Triangle</code><span class="sig-paren">(</span><em>p0</em>, <em>p1</em>, <em>p2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geometry_3d.html#Triangle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#geometry_3d.Triangle" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represents a planar triangle in 3d space, defined by three points.  Unoriented.</p>
 <dl class="method">
 <dt id="geometry_3d.Triangle.plot">
-<code class="descname">plot</code><span class="sig-paren">(</span><em>ax</em>, <em>color='y'</em>, <em>alpha=0.5</em>, <em>drawedges=True</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry_3d.Triangle.plot" title="Permalink to this definition">¶</a></dt>
+<code class="descname">plot</code><span class="sig-paren">(</span><em>ax</em>, <em>color='y'</em>, <em>alpha=0.5</em>, <em>drawedges=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geometry_3d.html#Triangle.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#geometry_3d.Triangle.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plots the triangle in 3d. For kwargs, see <a class="reference external" href="https://matplotlib.org/stable/api/collections_api.html#matplotlib.collections.Collection">https://matplotlib.org/stable/api/collections_api.html#matplotlib.collections.Collection</a></p>
 </dd></dl>
 
@@ -1624,23 +1625,45 @@ to ensure that this pathloss model is actually applicable.</p>
 
 <dl class="function">
 <dt id="geometry_3d.block">
-<code class="descclassname">geometry_3d.</code><code class="descname">block</code><span class="sig-paren">(</span><em>c0</em>, <em>c1</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry_3d.block" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">geometry_3d.</code><code class="descname">block</code><span class="sig-paren">(</span><em>c0</em>, <em>c1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geometry_3d.html#block"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#geometry_3d.block" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represents a rectangular block with opposite corners c0 and c1, with each face a rectangular Panel</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="geometry_3d.cube">
-<code class="descclassname">geometry_3d.</code><code class="descname">cube</code><span class="sig-paren">(</span><em>a</em>, <em>b</em>, <em>c=(0.0</em>, <em>0.0</em>, <em>0.0)</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry_3d.cube" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">geometry_3d.</code><code class="descname">cube</code><span class="sig-paren">(</span><em>a</em>, <em>b</em>, <em>c=(0.0</em>, <em>0.0</em>, <em>0.0)</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geometry_3d.html#cube"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#geometry_3d.cube" title="Permalink to this definition">¶</a></dt>
 <dd><p>cube c+[a,b]x[a,b]x[a,b], with each face a square Panel of two Triangles</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="geometry_3d.draw_building_3d">
-<code class="descclassname">geometry_3d.</code><code class="descname">draw_building_3d</code><span class="sig-paren">(</span><em>building, rays=[], line_segments=[], dots=[], color='y', fontsize=6, limits=[(0, 10), (0, 10), (0, 5)], labels=['', '', ''], drawedges=True, show=True, pdffn='', pngfn='', dbg=False</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry_3d.draw_building_3d" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">geometry_3d.</code><code class="descname">draw_building_3d</code><span class="sig-paren">(</span><em>building, rays=[], line_segments=[], dots=[], color='y', fontsize=6, limits=[(0, 10), (0, 10), (0, 5)], labels=['', '', ''], drawedges=True, show=True, pdffn='', pngfn='', dbg=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geometry_3d.html#draw_building_3d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#geometry_3d.draw_building_3d" title="Permalink to this definition">¶</a></dt>
 <dd><p>General function to draw a building, also rays and lines.</p>
 </dd></dl>
 
-<p>Last modified: 2022-11-14T10:53</p>
+</div>
+<div class="section" id="real-time-plotting-utility">
+<h3>Real-time plotting utility<a class="headerlink" href="#real-time-plotting-utility" title="Permalink to this headline">¶</a></h3>
+<p>This is independent of the main simulator code.  It reads output from the Logger via a pipe from stdin, and plots it using a matplotlib animation. It is driven with command-line options, which can be seen by running <code class="docutils literal notranslate"><span class="pre">realtime_plotter.py</span> <span class="pre">--help</span></code>.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>-h, --help            show this help message and exit
+--selftest            self-test
+-naxes NAXES          number of axes
+-nplots NPLOTS        number of plots
+-tmax TMAX            t_max
+-xlabel XLABEL        x axis label
+-fst FST              final sleep time
+-fnb FNB              filename base
+-ylims YLIMS          y limits (dict)
+-ylabels YLABELS      ylabels (dict)
+-title TITLE          figure title
+-lw LW                plot linewidth
+-author AUTHOR        author name for plot bottom margin
+-extra EXTRA          extra features to be added to the plot; raw python code
+-inputfile INPUTFILE  file to read input from instead of stdin; in this case the plot is not displayed, but written to an mp4 file
+-column_to_axis_map COLUMN_TO_AXIS_MAP column_to_axis_map (dict)
+</pre></div>
+</div>
+<p>Last modified: 2022-11-30T09:59</p>
 </div>
 </div>
 </div>
@@ -1655,7 +1678,7 @@ to ensure that this pathloss model is actually applicable.</p>
   <ul>
 <li><a class="reference internal" href="#">AIMM simulator documentation</a><ul>
 <li><a class="reference internal" href="#purpose">Purpose</a></li>
-<li><a class="reference internal" href="#software-prerequisites">Software prerequisites</a></li>
+<li><a class="reference internal" href="#software-dependencies">Software dependencies</a></li>
 <li><a class="reference internal" href="#installation">Installation</a></li>
 <li><a class="reference internal" href="#quick-start">Quick start</a></li>
 <li><a class="reference internal" href="#aimm-simulator-blocks">AIMM simulator blocks</a></li>
@@ -1675,10 +1698,11 @@ to ensure that this pathloss model is actually applicable.</p>
 <li><a class="reference internal" href="#simulator-module-api-reference">Simulator module API reference</a><ul>
 <li><a class="reference internal" href="#module-AIMM_simulator">AIMM simulator</a></li>
 <li><a class="reference internal" href="#module-NR_5G_standard_functions">NR 5G standard functions</a></li>
-<li><a class="reference internal" href="#uma-pathloss-model">UMa pathloss model</a></li>
-<li><a class="reference internal" href="#umi-pathloss-model">UMi pathloss model</a></li>
-<li><a class="reference internal" href="#inh-pathloss-model">InH pathloss model</a></li>
+<li><a class="reference internal" href="#module-UMa_pathloss_model">UMa pathloss model</a></li>
+<li><a class="reference internal" href="#module-UMi_pathloss_model">UMi pathloss model</a></li>
+<li><a class="reference internal" href="#module-InH_pathloss_model">InH pathloss model</a></li>
 <li><a class="reference internal" href="#module-geometry_3d">geometry_3d module</a></li>
+<li><a class="reference internal" href="#real-time-plotting-utility">Real-time plotting utility</a></li>
 </ul>
 </li>
 </ul>

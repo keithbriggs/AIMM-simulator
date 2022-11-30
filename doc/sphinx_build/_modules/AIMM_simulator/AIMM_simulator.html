@@ -1,0 +1,1090 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AIMM_simulator.AIMM_simulator &#8212; AIMM simulator 2.0.0 documentation</title>
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">AIMM simulator 2.0.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AIMM_simulator.AIMM_simulator</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Keith Briggs 2022-11-11 2.0 version</span>
+<span class="c1"># Simulation structure:</span>
+<span class="c1"># Sim - Scenario - MME</span>
+<span class="c1"># |</span>
+<span class="c1"># RIC</span>
+<span class="c1"># |</span>
+<span class="c1"># Cell---Cell---Cell--- ....</span>
+<span class="c1"># |       |      |</span>
+<span class="c1"># UE UE  UE UE  UE UE ...</span>
+
+<span class="n">__version__</span><span class="o">=</span><span class="s1">&#39;2.0.0&#39;</span>
+<span class="sd">&#39;&#39;&#39;The AIMM simulator emulates a cellular radio system roughly following 5G concepts and channel models.&#39;&#39;&#39;</span>
+
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">basename</span>
+<span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">stderr</span><span class="p">,</span><span class="n">stdout</span><span class="p">,</span><span class="n">exit</span><span class="p">,</span><span class="n">version</span> <span class="k">as</span> <span class="n">pyversion</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">hypot</span><span class="p">,</span><span class="n">atan2</span><span class="p">,</span><span class="n">pi</span> <span class="k">as</span> <span class="n">math_pi</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span><span class="p">,</span><span class="n">sleep</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">deque</span>
+<span class="k">try</span><span class="p">:</span>
+  <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="k">except</span><span class="p">:</span>
+  <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;numpy not found: please do &quot;pip install numpy&quot;&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+  <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+  <span class="kn">import</span> <span class="nn">simpy</span>
+<span class="k">except</span><span class="p">:</span>
+  <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;simpy not found: please do &quot;pip install simpy&quot;&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+  <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.NR_5G_standard_functions</span> <span class="kn">import</span> <span class="n">SINR_to_CQI</span><span class="p">,</span><span class="n">CQI_to_64QAM_efficiency</span>
+<span class="kn">from</span> <span class="nn">.UMa_pathloss_model</span> <span class="kn">import</span> <span class="n">UMa_pathloss</span>
+
+<span class="k">def</span> <span class="nf">np_array_to_str</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+  <span class="s1">&#39; Formats a 1-axis np.array as a tab-separated string &#39;</span>
+  <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array2string</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">separator</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;[&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;]&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_nearest_weighted_point</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">pts</span><span class="p">,</span><span class="n">w</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+  <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">  Internal use only.</span>
+<span class="sd">  Given a point x of shape (dim,), where dim is typically 2 or 3,</span>
+<span class="sd">  an array of points pts of shape (npts,dim),</span>
+<span class="sd">  and a vector of weights w of the same length as pts,</span>
+<span class="sd">  return the index of the point minimizing w[i]*d[i],</span>
+<span class="sd">  where d[i] is the distance from x to point i.</span>
+<span class="sd">  Returns the index of the point minimizing w[i]*d[i].</span>
+<span class="sd">  For the application to cellular radio systems, we let pts be the</span>
+<span class="sd">  cell locations, and then if we set</span>
+<span class="sd">  w[i]=p[i]**(-1/alpha),</span>
+<span class="sd">  where p[i] is the transmit power of cell i, and alpha&gt;=2 is the pathloss</span>
+<span class="sd">  exponent, then this algorithm will give us the index of the cell providing</span>
+<span class="sd">  largest received power at the point x.</span>
+<span class="sd">  &#39;&#39;&#39;</span>
+  <span class="n">weighted_distances</span><span class="o">=</span><span class="n">w</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">pts</span><span class="o">-</span><span class="n">x</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+  <span class="n">imin</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">weighted_distances</span><span class="p">)</span>
+  <span class="k">if</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># dbg</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;x=&#39;</span><span class="p">,</span><span class="n">x</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;pts=&#39;</span><span class="p">,</span><span class="n">pts</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;weighted_distances=&#39;</span><span class="p">,</span><span class="n">weighted_distances</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">weighted_distances</span><span class="p">[</span><span class="n">imin</span><span class="p">],</span><span class="n">imin</span>
+
+<span class="k">def</span> <span class="nf">to_dB</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+  <span class="k">return</span> <span class="mf">10.0</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">from_dB</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+  <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mf">10.0</span><span class="p">,</span><span class="n">x</span><span class="o">/</span><span class="mf">10.0</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Cell"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Cell">[docs]</a><span class="k">class</span> <span class="nc">Cell</span><span class="p">:</span>
+  <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">  Class representing a single Cell (gNB).  As instances are created, the are automatically given indices starting from 0.  This index is available as the data member ``cell.i``.   The variable ``Cell.i`` is always the current number of cells.</span>
+
+<span class="sd">  Parameters</span>
+<span class="sd">  ----------</span>
+<span class="sd">  sim : Sim</span>
+<span class="sd">    Simulator instance which will manage this Cell.</span>
+<span class="sd">  interval : float</span>
+<span class="sd">    Time interval between Cell updates.</span>
+<span class="sd">  bw_MHz : float</span>
+<span class="sd">    Channel bandwidth in MHz.</span>
+<span class="sd">  n_subbands : int</span>
+<span class="sd">    Number of subbands.</span>
+<span class="sd">  xyz : [float, float, float]</span>
+<span class="sd">    Position of cell in metres, and antenna height.</span>
+<span class="sd">  h_BS : float</span>
+<span class="sd">    Antenna height in metres; only used if xyz is not provided.</span>
+<span class="sd">  power_dBm : float</span>
+<span class="sd">    Transmit power in dBm.</span>
+<span class="sd">  MIMO_gain_dB : float</span>
+<span class="sd">    Effective power gain from MIMO in dB.  This is no more than a crude way to</span>
+<span class="sd">    estimate the performance gain from using MIMO.  A typical value might be 3dB for 2x2 MIMO.</span>
+<span class="sd">  pattern : array or function</span>
+<span class="sd">    If an array, then a 360-element array giving the antenna gain in dB in 1-degree increments (0=east, then counterclockwise).  Otherwise, a function giving the antenna gain in dB in the direction theta=(180/pi)*atan2(y,x).</span>
+<span class="sd">  f_callback :</span>
+<span class="sd">    A function with signature ``f_callback(self,kwargs)``, which will be called</span>
+<span class="sd">    at each iteration of the main loop.</span>
+<span class="sd">  verbosity : int</span>
+<span class="sd">      Level of debugging output (0=none).</span>
+<span class="sd">  &#39;&#39;&#39;</span>
+  <span class="n">i</span><span class="o">=</span><span class="mi">0</span>
+
+  <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="n">s</span><span class="p">,</span>
+               <span class="n">sim</span><span class="p">,</span>
+               <span class="n">interval</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>
+               <span class="n">bw_MHz</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>
+               <span class="n">n_subbands</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+               <span class="n">xyz</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">h_BS</span><span class="o">=</span><span class="mf">20.0</span><span class="p">,</span>
+               <span class="n">power_dBm</span><span class="o">=</span><span class="mf">30.0</span><span class="p">,</span>
+               <span class="n">MIMO_gain_dB</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+               <span class="n">pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">f_callback</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">f_callback_kwargs</span><span class="o">=</span><span class="p">{},</span>
+               <span class="n">verbosity</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="c1"># default scene 1000m x 1000m, but keep cells near the centre</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="o">=</span><span class="n">Cell</span><span class="o">.</span><span class="n">i</span><span class="p">;</span> <span class="n">Cell</span><span class="o">.</span><span class="n">i</span><span class="o">+=</span><span class="mi">1</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">=</span><span class="n">sim</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">interval</span><span class="o">=</span><span class="n">interval</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">bw_MHz</span><span class="o">=</span><span class="n">bw_MHz</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">n_subbands</span><span class="o">=</span><span class="n">n_subbands</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">subband_mask</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_subbands</span><span class="p">)</span> <span class="c1"># dtype is float, to allow soft masking</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">rbs</span><span class="o">=</span><span class="n">simpy</span><span class="o">.</span><span class="n">Resource</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">env</span><span class="p">,</span><span class="n">capacity</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">power_dBm</span><span class="o">=</span><span class="n">power_dBm</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">pattern</span><span class="o">=</span><span class="n">pattern</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">f_callback</span><span class="o">=</span><span class="n">f_callback</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">f_callback_kwargs</span><span class="o">=</span><span class="n">f_callback_kwargs</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">MIMO_gain_dB</span><span class="o">=</span><span class="n">MIMO_gain_dB</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">attached</span><span class="o">=</span><span class="nb">set</span><span class="p">()</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">reports</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;cqi&#39;</span><span class="p">:</span> <span class="p">{},</span> <span class="s1">&#39;rsrp&#39;</span><span class="p">:</span> <span class="p">{},</span> <span class="s1">&#39;throughput_Mbps&#39;</span><span class="p">:</span> <span class="p">{}}</span>
+    <span class="c1"># rsrp_history[i] will be the last 10 reports of rsrp received</span>
+    <span class="c1"># at this cell from UE[i] (no timestamps, just for getting trend)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">rsrp_history</span><span class="o">=</span><span class="p">{}</span>
+    <span class="k">if</span> <span class="n">xyz</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">xyz</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span> <span class="c1"># random cell locations</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span><span class="o">=</span><span class="mf">100.0</span><span class="o">+</span><span class="mf">900.0</span><span class="o">*</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">=</span><span class="n">h_BS</span>
+    <span class="k">if</span> <span class="n">verbosity</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cell[</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="si">}</span><span class="s1">] is at&#39;</span><span class="p">,</span><span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">verbosity</span><span class="o">=</span><span class="n">verbosity</span>
+    <span class="c1"># every time we make a new Cell, we have to check whether</span>
+    <span class="c1"># we have a hetnet or not...</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">_set_hetnet</span><span class="p">()</span>
+    <span class="c1">#s.sim.env.process(s.loop()) # start Cell main loop</span>
+
+<div class="viewcode-block" id="Cell.set_f_callback"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Cell.set_f_callback">[docs]</a>  <span class="k">def</span> <span class="nf">set_f_callback</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">f_callback</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="s1">&#39; Add a callback function to the main loop of this Cell &#39;</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">f_callback</span><span class="o">=</span><span class="n">f_callback</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">f_callback_kwargs</span><span class="o">=</span><span class="n">kwargs</span></div>
+
+<div class="viewcode-block" id="Cell.loop"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Cell.loop">[docs]</a>  <span class="k">def</span> <span class="nf">loop</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">      Main loop of Cell class.  Default: do nothing.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">f_callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">f_callback</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="o">**</span><span class="n">s</span><span class="o">.</span><span class="n">f_callback_kwargs</span><span class="p">)</span>
+      <span class="k">yield</span> <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">timeout</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">interval</span><span class="p">)</span></div>
+
+  <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;Cell(index=</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="si">}</span><span class="s1">,xyz=</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="si">}</span><span class="s1">)&#39;</span>
+
+<div class="viewcode-block" id="Cell.get_nattached"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Cell.get_nattached">[docs]</a>  <span class="k">def</span> <span class="nf">get_nattached</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return the current number of UEs attached to this Cell.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">attached</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Cell.get_xyz"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Cell.get_xyz">[docs]</a>  <span class="k">def</span> <span class="nf">get_xyz</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return the current position of this Cell.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">xyz</span></div>
+
+<div class="viewcode-block" id="Cell.set_xyz"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Cell.set_xyz">[docs]</a>  <span class="k">def</span> <span class="nf">set_xyz</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">xyz</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Set a new position for this Cell.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">xyz</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">cell_locations</span><span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">xyz</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cell[</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="si">}</span><span class="s1">]   is now at </span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Cell.get_power_dBm"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Cell.get_power_dBm">[docs]</a>  <span class="k">def</span> <span class="nf">get_power_dBm</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return the transmit power in dBm currently used by this cell.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">power_dBm</span></div>
+
+<div class="viewcode-block" id="Cell.set_power_dBm"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Cell.set_power_dBm">[docs]</a>  <span class="k">def</span> <span class="nf">set_power_dBm</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">p</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Set the transmit power in dBm to be used by this cell.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">power_dBm</span><span class="o">=</span><span class="n">p</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">_set_hetnet</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Cell.boost_power_dBm"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Cell.boost_power_dBm">[docs]</a>  <span class="k">def</span> <span class="nf">boost_power_dBm</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">p</span><span class="p">,</span><span class="n">mn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">mx</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Increase or decrease (if p&lt;0) the transmit power in dBm to be used by this cell.</span>
+<span class="sd">    If mn is not ``None``, then the power will not be set if it falls below mn.</span>
+<span class="sd">    If mx is not ``None``, then the power will not be set if it exceeds mx.</span>
+<span class="sd">    Return the new power.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">p</span><span class="o">&lt;</span><span class="mf">0.0</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">mn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">s</span><span class="o">.</span><span class="n">power_dBm</span><span class="o">+</span><span class="n">p</span><span class="o">&gt;=</span><span class="n">mn</span><span class="p">:</span>
+        <span class="n">s</span><span class="o">.</span><span class="n">power_dBm</span><span class="o">+=</span><span class="n">p</span>
+      <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">power_dBm</span>
+    <span class="k">if</span> <span class="n">p</span><span class="o">&gt;</span><span class="mf">0.0</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">mx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">s</span><span class="o">.</span><span class="n">power_dBm</span><span class="o">+</span><span class="n">p</span><span class="o">&lt;=</span><span class="n">mx</span><span class="p">:</span>
+        <span class="n">s</span><span class="o">.</span><span class="n">power_dBm</span><span class="o">+=</span><span class="n">p</span>
+      <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">power_dBm</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">power_dBm</span><span class="o">+=</span><span class="n">p</span>
+    <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">power_dBm</span></div>
+
+<div class="viewcode-block" id="Cell.get_rsrp"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Cell.get_rsrp">[docs]</a>  <span class="k">def</span> <span class="nf">get_rsrp</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">i</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return last RSRP reported to this cell by UE[i].</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">reports</span><span class="p">[</span><span class="s1">&#39;rsrp&#39;</span><span class="p">]:</span>
+      <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">reports</span><span class="p">[</span><span class="s1">&#39;rsrp&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span> <span class="c1"># no reports</span></div>
+
+<div class="viewcode-block" id="Cell.get_rsrp_history"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Cell.get_rsrp_history">[docs]</a>  <span class="k">def</span> <span class="nf">get_rsrp_history</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">i</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return an array of the last 10 RSRP[1]s reported to this cell by UE[i].</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">rsrp_history</span><span class="p">:</span>
+      <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">rsrp_history</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="c1"># no recorded history</span></div>
+
+<div class="viewcode-block" id="Cell.set_MIMO_gain"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Cell.set_MIMO_gain">[docs]</a>  <span class="k">def</span> <span class="nf">set_MIMO_gain</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">MIMO_gain_dB</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Set the MIMO gain in dB to be used by this cell.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">MIMO_gain_dB</span><span class="o">=</span><span class="n">MIMO_gain_dB</span></div>
+
+<div class="viewcode-block" id="Cell.get_UE_throughput"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Cell.get_UE_throughput">[docs]</a>  <span class="k">def</span> <span class="nf">get_UE_throughput</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">ue_i</span><span class="p">):</span> <span class="c1"># FIXME do we want an array over subbands?</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return the total current throughput in Mb/s of UE[i] in the simulation.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">reports</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">reports</span><span class="p">[</span><span class="s1">&#39;throughput_Mbps&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">ue_i</span> <span class="ow">in</span> <span class="n">reports</span><span class="p">:</span> <span class="k">return</span> <span class="n">reports</span><span class="p">[</span><span class="n">ue_i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span> <span class="c1"># [-np.inf]*s.n_subbands # special value to indicate no report</span></div>
+
+<div class="viewcode-block" id="Cell.get_UE_CQI"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Cell.get_UE_CQI">[docs]</a>  <span class="k">def</span> <span class="nf">get_UE_CQI</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">ue_i</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return the current CQI of UE[i] in the simulation, as an array across all subbands.  An array of NaNs is returned if there is no report.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">reports</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">reports</span><span class="p">[</span><span class="s1">&#39;cqi&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">reports</span><span class="p">[</span><span class="n">ue_i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">ue_i</span> <span class="ow">in</span> <span class="n">reports</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">n_subbands</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Cell.get_RSRP_reports"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Cell.get_RSRP_reports">[docs]</a>  <span class="k">def</span> <span class="nf">get_RSRP_reports</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return the current RSRP reports to this cell, as a list of tuples (ue.i, rsrp).</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">reports</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">reports</span><span class="p">[</span><span class="s1">&#39;rsrp&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">[(</span><span class="n">ue</span><span class="o">.</span><span class="n">i</span><span class="p">,</span><span class="n">reports</span><span class="p">[</span><span class="n">ue</span><span class="o">.</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span> <span class="k">if</span> <span class="n">ue</span><span class="o">.</span><span class="n">i</span> <span class="ow">in</span> <span class="n">reports</span> <span class="k">else</span> <span class="p">(</span><span class="n">ue</span><span class="o">.</span><span class="n">i</span><span class="p">,</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span> <span class="k">for</span> <span class="n">ue</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">UEs</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Cell.get_RSRP_reports_dict"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Cell.get_RSRP_reports_dict">[docs]</a>  <span class="k">def</span> <span class="nf">get_RSRP_reports_dict</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return the current RSRP reports to this cell, as a dictionary ue.i: rsrp.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">reports</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">reports</span><span class="p">[</span><span class="s1">&#39;rsrp&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">((</span><span class="n">ue</span><span class="o">.</span><span class="n">i</span><span class="p">,</span><span class="n">reports</span><span class="p">[</span><span class="n">ue</span><span class="o">.</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span> <span class="k">if</span> <span class="n">ue</span><span class="o">.</span><span class="n">i</span> <span class="ow">in</span> <span class="n">reports</span> <span class="k">else</span> <span class="p">(</span><span class="n">ue</span><span class="o">.</span><span class="n">i</span><span class="p">,</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span> <span class="k">for</span> <span class="n">ue</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">UEs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Cell.get_average_throughput"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Cell.get_average_throughput">[docs]</a>  <span class="k">def</span> <span class="nf">get_average_throughput</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return the average throughput over all UEs attached to this cell.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">reports</span><span class="p">,</span><span class="n">k</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">reports</span><span class="p">[</span><span class="s1">&#39;throughput_Mbps&#39;</span><span class="p">],</span><span class="mi">0</span>
+    <span class="n">ave</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">n_subbands</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ue_i</span> <span class="ow">in</span> <span class="n">reports</span><span class="p">:</span>
+      <span class="n">k</span><span class="o">+=</span><span class="mi">1</span>
+      <span class="c1">#ave+=(reports[ue_i][1][0]-ave)/k</span>
+      <span class="n">ave</span><span class="o">+=</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">reports</span><span class="p">[</span><span class="n">ue_i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">-</span><span class="n">ave</span><span class="p">)</span><span class="o">/</span><span class="n">k</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ave</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Cell.set_pattern"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Cell.set_pattern">[docs]</a>  <span class="k">def</span> <span class="nf">set_pattern</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">pattern</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Set the antenna radiation pattern.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">pattern</span><span class="o">=</span><span class="n">pattern</span></div>
+
+<div class="viewcode-block" id="Cell.set_subband_mask"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Cell.set_subband_mask">[docs]</a>  <span class="k">def</span> <span class="nf">set_subband_mask</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">mask</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Set the subband mask to ``mask``.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1">#print(&#39;set_subband_mask&#39;,s.subband_mask.shape,len(mask),file=stderr)</span>
+    <span class="k">assert</span> <span class="n">s</span><span class="o">.</span><span class="n">subband_mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="nb">len</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">subband_mask</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Cell.get_subband_mask"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Cell.get_subband_mask">[docs]</a>  <span class="k">def</span> <span class="nf">get_subband_mask</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Get the current subband mask.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">subband_mask</span></div>
+
+  <span class="k">def</span> <span class="nf">monitor_rbs</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">rbs</span><span class="o">.</span><span class="n">queue</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">verbosity</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;rbs at </span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">now</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> =</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">rbs</span><span class="o">.</span><span class="n">count</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+      <span class="k">yield</span> <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">timeout</span><span class="p">(</span><span class="mf">5.0</span><span class="p">)</span></div>
+<span class="c1"># END class Cell</span>
+
+<div class="viewcode-block" id="UE"><a class="viewcode-back" href="../../index.html#AIMM_simulator.UE">[docs]</a><span class="k">class</span> <span class="nc">UE</span><span class="p">:</span>
+  <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Represents a single UE. As instances are created, the are automatically given indices starting from 0.  This index is available as the data member ``ue.i``.   The static (class-level) variable ``UE.i`` is always the current number of UEs.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sim : Sim</span>
+<span class="sd">      The Sim instance which will manage this UE.</span>
+<span class="sd">    xyz : [float, float, float]</span>
+<span class="sd">      Position of UE in metres, and antenna height.</span>
+<span class="sd">    h_UT : float</span>
+<span class="sd">      Antenna height of user terminal in metres; only used if xyz is not provided.</span>
+<span class="sd">    reporting_interval : float</span>
+<span class="sd">      Time interval between UE reports being sent to the serving cell.</span>
+<span class="sd">    f_callback :</span>
+<span class="sd">      A function with signature ``f_callback(self,kwargs)``, which will be called at each iteration of the main loop.</span>
+<span class="sd">    f_callback_kwargs :</span>
+<span class="sd">      kwargs for previous function.</span>
+<span class="sd">    pathloss_model</span>
+<span class="sd">      An instance of a pathloss model.  This must be a callable object which</span>
+<span class="sd">      takes two arguments, each a 3-vector.  The first represent the transmitter</span>
+<span class="sd">      location, and the second the receiver location.  It must return the</span>
+<span class="sd">      pathloss in dB along this signal path.</span>
+<span class="sd">      If set to ``None`` (the default), a standard urban macrocell model</span>
+<span class="sd">      is used.</span>
+<span class="sd">      See further ``NR_5G_standard_functions_00.py``.</span>
+<span class="sd">  &#39;&#39;&#39;</span>
+  <span class="n">i</span><span class="o">=</span><span class="mi">0</span>
+
+  <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">sim</span><span class="p">,</span><span class="n">xyz</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">reporting_interval</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span><span class="n">pathloss_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">h_UT</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span><span class="n">f_callback</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">f_callback_kwargs</span><span class="o">=</span><span class="p">{},</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">=</span><span class="n">sim</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="o">=</span><span class="n">UE</span><span class="o">.</span><span class="n">i</span><span class="p">;</span> <span class="n">UE</span><span class="o">.</span><span class="n">i</span><span class="o">+=</span><span class="mi">1</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">=</span><span class="kc">None</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">f_callback</span><span class="o">=</span><span class="n">f_callback</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">f_callback_kwargs</span><span class="o">=</span><span class="n">f_callback_kwargs</span>
+    <span class="c1"># next will be a record of last 10 serving cell ids,</span>
+    <span class="c1"># with time of last attachment.</span>
+    <span class="c1"># 0=&gt;current, 1=&gt;previous, etc. -1 =&gt; not valid)</span>
+    <span class="c1"># This is for use in handover algorithms</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">serving_cell_ids</span><span class="o">=</span><span class="n">deque</span><span class="p">([(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">)]</span><span class="o">*</span><span class="mi">10</span><span class="p">,</span><span class="n">maxlen</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">reporting_interval</span><span class="o">=</span><span class="n">reporting_interval</span>
+    <span class="k">if</span> <span class="n">xyz</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">xyz</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="o">=</span><span class="mf">250.0</span><span class="o">+</span><span class="mf">500.0</span><span class="o">*</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">=</span><span class="n">h_UT</span>
+    <span class="k">if</span> <span class="n">verbosity</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;UE[</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="si">}</span><span class="s1">]   is at&#39;</span><span class="p">,</span><span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+    <span class="c1"># We assume here that the UMa_pathloss model needs to be instantiated,</span>
+    <span class="c1"># but other user-provided models are already instantiated,</span>
+    <span class="c1"># and provide callable objects...</span>
+    <span class="k">if</span> <span class="n">pathloss_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">pathloss</span><span class="o">=</span><span class="n">UMa_pathloss</span><span class="p">(</span><span class="n">fc_GHz</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;fc_GHz&#39;</span><span class="p">],</span><span class="n">h_UT</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;h_UT&#39;</span><span class="p">],</span><span class="n">h_BS</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;h_BS&#39;</span><span class="p">])</span>
+      <span class="k">if</span> <span class="n">verbosity</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Using 5G standard urban macrocell pathloss model.&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">pathloss</span><span class="o">=</span><span class="n">pathloss_model</span>
+      <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">pathloss</span><span class="o">.</span><span class="vm">__doc__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verbosity</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Using user-specified pathloss model &quot;</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">pathloss</span><span class="o">.</span><span class="vm">__doc__</span><span class="si">}</span><span class="s1">&quot;.&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Using user-specified pathloss model.&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">verbosity</span><span class="o">=</span><span class="n">verbosity</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">noise_power_dBm</span><span class="o">=-</span><span class="mf">140.0</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">cqi</span><span class="o">=</span><span class="kc">None</span>
+    <span class="c1"># Keith Briggs 2022-10-12 loops now started in Sim.__init__</span>
+    <span class="c1">#s.sim.env.process(s.run_subband_cqi_report())</span>
+    <span class="c1">#s.sim.env.process(s.loop()) # this does reports to all cells</span>
+
+  <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;UE(index=</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="si">}</span><span class="s1">,xyz=</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="si">}</span><span class="s1">,serving_cell=</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span><span class="si">}</span><span class="s1">)&#39;</span>
+
+<div class="viewcode-block" id="UE.set_f_callback"><a class="viewcode-back" href="../../index.html#AIMM_simulator.UE.set_f_callback">[docs]</a>  <span class="k">def</span> <span class="nf">set_f_callback</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">f_callback</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="s1">&#39; Add a callack function to the main loop of this UE &#39;</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">f_callback</span><span class="o">=</span><span class="n">f_callback</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">f_callback_kwargs</span><span class="o">=</span><span class="n">kwargs</span></div>
+
+<div class="viewcode-block" id="UE.loop"><a class="viewcode-back" href="../../index.html#AIMM_simulator.UE.loop">[docs]</a>  <span class="k">def</span> <span class="nf">loop</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="s1">&#39; Main loop of UE class &#39;</span>
+    <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">verbosity</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+      <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Main loop of UE[</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="si">}</span><span class="s1">] started&#39;</span><span class="p">)</span>
+      <span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">f_callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">f_callback</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="o">**</span><span class="n">s</span><span class="o">.</span><span class="n">f_callback_kwargs</span><span class="p">)</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">send_rsrp_reports</span><span class="p">()</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">send_subband_cqi_report</span><span class="p">()</span> <span class="c1"># FIXME merge these two reports</span>
+      <span class="c1">#print(f&#39;dbg: Main loop of UE class started&#39;); exit()</span>
+      <span class="k">yield</span> <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">timeout</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">reporting_interval</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UE.get_serving_cell"><a class="viewcode-back" href="../../index.html#AIMM_simulator.UE.get_serving_cell">[docs]</a>  <span class="k">def</span> <span class="nf">get_serving_cell</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return the current serving Cell object (not index) for this UE instance.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">ss</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span>
+    <span class="k">if</span> <span class="n">ss</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span></div>
+
+<div class="viewcode-block" id="UE.get_serving_cell_i"><a class="viewcode-back" href="../../index.html#AIMM_simulator.UE.get_serving_cell_i">[docs]</a>  <span class="k">def</span> <span class="nf">get_serving_cell_i</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return the current serving Cell index for this UE instance.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">ss</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span>
+    <span class="k">if</span> <span class="n">ss</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">.</span><span class="n">i</span></div>
+
+<div class="viewcode-block" id="UE.get_xyz"><a class="viewcode-back" href="../../index.html#AIMM_simulator.UE.get_xyz">[docs]</a>  <span class="k">def</span> <span class="nf">get_xyz</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return the current position of this UE.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">xyz</span></div>
+
+<div class="viewcode-block" id="UE.set_xyz"><a class="viewcode-back" href="../../index.html#AIMM_simulator.UE.set_xyz">[docs]</a>  <span class="k">def</span> <span class="nf">set_xyz</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">xyz</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Set a new position for this UE.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">xyz</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;UE[</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="si">}</span><span class="s1">] is now at </span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UE.attach"><a class="viewcode-back" href="../../index.html#AIMM_simulator.UE.attach">[docs]</a>  <span class="k">def</span> <span class="nf">attach</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">cell</span><span class="p">,</span><span class="n">quiet</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Attach this UE to a specific Cell instance.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">cell</span><span class="o">.</span><span class="n">attached</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">=</span><span class="n">cell</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">serving_cell_ids</span><span class="o">.</span><span class="n">appendleft</span><span class="p">((</span><span class="n">cell</span><span class="o">.</span><span class="n">i</span><span class="p">,</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">now</span><span class="p">,))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">quiet</span> <span class="ow">and</span> <span class="n">s</span><span class="o">.</span><span class="n">verbosity</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+      <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;UE[</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="si">:</span><span class="s1">2</span><span class="si">}</span><span class="s1">] is attached to cell[</span><span class="si">{</span><span class="n">cell</span><span class="o">.</span><span class="n">i</span><span class="si">}</span><span class="s1">]&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UE.detach"><a class="viewcode-back" href="../../index.html#AIMM_simulator.UE.detach">[docs]</a>  <span class="k">def</span> <span class="nf">detach</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">quiet</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Detach this UE from its serving cell.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># Keith Briggs 2022-08-08 added None test</span>
+      <span class="k">return</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">.</span><span class="n">attached</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="p">)</span>
+    <span class="c1"># clear saved reports from this UE...</span>
+    <span class="n">reports</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">.</span><span class="n">reports</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">reports</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">i</span> <span class="ow">in</span> <span class="n">reports</span><span class="p">[</span><span class="n">x</span><span class="p">]:</span> <span class="k">del</span> <span class="n">reports</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">quiet</span> <span class="ow">and</span> <span class="n">s</span><span class="o">.</span><span class="n">verbosity</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+      <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;UE[</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="si">}</span><span class="s1">] detached from cell[</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">.</span><span class="n">i</span><span class="si">}</span><span class="s1">]&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">=</span><span class="kc">None</span></div>
+
+<div class="viewcode-block" id="UE.attach_to_strongest_cell_simple_pathloss_model"><a class="viewcode-back" href="../../index.html#AIMM_simulator.UE.attach_to_strongest_cell_simple_pathloss_model">[docs]</a>  <span class="k">def</span> <span class="nf">attach_to_strongest_cell_simple_pathloss_model</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Attach to the cell delivering the strongest signal</span>
+<span class="sd">    at the current UE position. Intended for initial attachment only.</span>
+<span class="sd">    Uses only a simple power-law pathloss model.  For proper handover</span>
+<span class="sd">    behaviour, use the MME module.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">celli</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">get_strongest_cell_simple_pathloss_model</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">cells</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">.</span><span class="n">attached</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">verbosity</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+      <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;UE[</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="si">:</span><span class="s1">2</span><span class="si">}</span><span class="s1">] ⟵⟶  cell[</span><span class="si">{</span><span class="n">celli</span><span class="si">}</span><span class="s1">]&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UE.attach_to_nearest_cell"><a class="viewcode-back" href="../../index.html#AIMM_simulator.UE.attach_to_nearest_cell">[docs]</a>  <span class="k">def</span> <span class="nf">attach_to_nearest_cell</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Attach this UE to the geographically nearest Cell instance.</span>
+<span class="sd">    Intended for initial attachment only.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">dmin</span><span class="p">,</span><span class="n">celli</span><span class="o">=</span><span class="n">_nearest_weighted_point</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">cell_locations</span><span class="p">[:,:</span><span class="mi">2</span><span class="p">])</span>
+    <span class="k">if</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># dbg</span>
+      <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;_nearest_weighted_point: celli=</span><span class="si">{</span><span class="n">celli</span><span class="si">}</span><span class="s1"> dmin=</span><span class="si">{</span><span class="n">dmin</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+      <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">cells</span><span class="p">:</span>
+        <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">xyz</span><span class="o">-</span><span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cell[</span><span class="si">{</span><span class="n">cell</span><span class="o">.</span><span class="n">i</span><span class="si">}</span><span class="s1">] is at distance </span><span class="si">{</span><span class="n">d</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">cells</span><span class="p">[</span><span class="n">celli</span><span class="p">]</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">.</span><span class="n">attached</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">verbosity</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+      <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;UE[</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="si">:</span><span class="s1">2</span><span class="si">}</span><span class="s1">] ⟵⟶  cell[</span><span class="si">{</span><span class="n">celli</span><span class="si">}</span><span class="s1">]&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UE.get_CQI"><a class="viewcode-back" href="../../index.html#AIMM_simulator.UE.get_CQI">[docs]</a>  <span class="k">def</span> <span class="nf">get_CQI</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return the current CQI of this UE, as an array across all subbands.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">cqi</span></div>
+
+<div class="viewcode-block" id="UE.send_rsrp_reports"><a class="viewcode-back" href="../../index.html#AIMM_simulator.UE.send_rsrp_reports">[docs]</a>  <span class="k">def</span> <span class="nf">send_rsrp_reports</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">threshold</span><span class="o">=-</span><span class="mf">120.0</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Send RSRP reports in dBm to all cells for which it is over the threshold.</span>
+<span class="sd">    Subbands not handled.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># antenna pattern computation added Keith Briggs 2021-11-24.</span>
+    <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">cells</span><span class="p">:</span>
+      <span class="n">pl_dB</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">pathloss</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">xyz</span><span class="p">,</span><span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="p">)</span> <span class="c1"># 2021-10-29</span>
+      <span class="n">antenna_gain_dB</span><span class="o">=</span><span class="mf">0.0</span>
+      <span class="k">if</span> <span class="n">cell</span><span class="o">.</span><span class="n">pattern</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">vector</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="o">-</span><span class="n">cell</span><span class="o">.</span><span class="n">xyz</span> <span class="c1"># vector pointing from cell to UE</span>
+        <span class="n">angle_degrees</span><span class="o">=</span><span class="p">(</span><span class="mf">180.0</span><span class="o">/</span><span class="n">math_pi</span><span class="p">)</span><span class="o">*</span><span class="n">atan2</span><span class="p">(</span><span class="n">vector</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">vector</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">antenna_gain_dB</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">pattern</span><span class="p">(</span><span class="n">angle_degrees</span><span class="p">)</span> <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">pattern</span><span class="p">)</span> \
+          <span class="k">else</span> <span class="n">cell</span><span class="o">.</span><span class="n">pattern</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">angle_degrees</span><span class="p">)</span><span class="o">%</span><span class="mi">360</span><span class="p">]</span>
+      <span class="n">rsrp_dBm</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">power_dBm</span><span class="o">+</span><span class="n">antenna_gain_dB</span><span class="o">+</span><span class="n">cell</span><span class="o">.</span><span class="n">MIMO_gain_dB</span><span class="o">-</span><span class="n">pl_dB</span>
+      <span class="n">rsrp</span><span class="o">=</span><span class="n">from_dB</span><span class="p">(</span><span class="n">rsrp_dBm</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">rsrp_dBm</span><span class="o">&gt;</span><span class="n">threshold</span><span class="p">:</span>
+        <span class="n">cell</span><span class="o">.</span><span class="n">reports</span><span class="p">[</span><span class="s1">&#39;rsrp&#39;</span><span class="p">][</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">now</span><span class="p">,</span><span class="n">rsrp_dBm</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cell</span><span class="o">.</span><span class="n">rsrp_history</span><span class="p">:</span>
+          <span class="n">cell</span><span class="o">.</span><span class="n">rsrp_history</span><span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="n">deque</span><span class="p">([</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,]</span><span class="o">*</span><span class="mi">10</span><span class="p">,</span><span class="n">maxlen</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="n">cell</span><span class="o">.</span><span class="n">rsrp_history</span><span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">appendleft</span><span class="p">(</span><span class="n">rsrp_dBm</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UE.send_subband_cqi_report"><a class="viewcode-back" href="../../index.html#AIMM_simulator.UE.send_subband_cqi_report">[docs]</a>  <span class="k">def</span> <span class="nf">send_subband_cqi_report</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    For this UE, send an array of CQI reports, one for each subband; and a total throughput report, to the serving cell.</span>
+<span class="sd">    What is sent is a 2-tuple (current time, array of reports).</span>
+<span class="sd">    For RSRP reports, use the function ``send_rsrp_reports``.</span>
+<span class="sd">    Also save the CQI[1]s in s.cqi, and return the throughput value.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="k">return</span> <span class="mf">0.0</span> <span class="c1"># 2022-08-08 detached</span>
+    <span class="n">interference</span><span class="o">=</span><span class="n">from_dB</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">noise_power_dBm</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">.</span><span class="n">n_subbands</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">cells</span><span class="p">:</span>
+      <span class="n">pl_dB</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">pathloss</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">xyz</span><span class="p">,</span><span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="p">)</span>
+      <span class="n">antenna_gain_dB</span><span class="o">=</span><span class="mf">0.0</span>
+      <span class="k">if</span> <span class="n">cell</span><span class="o">.</span><span class="n">pattern</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">vector</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">xyz</span><span class="o">-</span><span class="n">cell</span><span class="o">.</span><span class="n">xyz</span> <span class="c1"># vector pointing from cell to UE</span>
+        <span class="n">angle_degrees</span><span class="o">=</span><span class="p">(</span><span class="mf">180.0</span><span class="o">/</span><span class="n">math_pi</span><span class="p">)</span><span class="o">*</span><span class="n">atan2</span><span class="p">(</span><span class="n">vector</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">vector</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">antenna_gain_dB</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">pattern</span><span class="p">(</span><span class="n">angle_degrees</span><span class="p">)</span> <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">pattern</span><span class="p">)</span> \
+          <span class="k">else</span> <span class="n">cell</span><span class="o">.</span><span class="n">pattern</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">angle_degrees</span><span class="p">)</span><span class="o">%</span><span class="mi">360</span><span class="p">]</span>
+      <span class="k">if</span> <span class="n">cell</span><span class="o">.</span><span class="n">i</span><span class="o">==</span><span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">.</span><span class="n">i</span><span class="p">:</span> <span class="c1"># wanted signal</span>
+        <span class="n">rsrp_dBm</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">MIMO_gain_dB</span><span class="o">+</span><span class="n">antenna_gain_dB</span><span class="o">+</span><span class="n">cell</span><span class="o">.</span><span class="n">power_dBm</span><span class="o">-</span><span class="n">pl_dB</span>
+      <span class="k">else</span><span class="p">:</span> <span class="c1"># unwanted interference</span>
+        <span class="n">received_interference_power</span><span class="o">=</span><span class="n">antenna_gain_dB</span><span class="o">+</span><span class="n">cell</span><span class="o">.</span><span class="n">power_dBm</span><span class="o">-</span><span class="n">pl_dB</span>
+        <span class="n">interference</span><span class="o">+=</span><span class="n">from_dB</span><span class="p">(</span><span class="n">received_interference_power</span><span class="p">)</span><span class="o">*</span><span class="n">cell</span><span class="o">.</span><span class="n">subband_mask</span>
+    <span class="n">rsrp</span><span class="o">=</span><span class="n">from_dB</span><span class="p">(</span><span class="n">rsrp_dBm</span><span class="p">)</span>
+    <span class="n">sinr_dB</span><span class="o">=</span><span class="n">to_dB</span><span class="p">(</span><span class="n">rsrp</span><span class="o">/</span><span class="n">interference</span><span class="p">)</span> <span class="c1"># scalar/array</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">cqi</span><span class="o">=</span><span class="n">cqi</span><span class="o">=</span><span class="n">SINR_to_CQI</span><span class="p">(</span><span class="n">sinr_dB</span><span class="p">)</span>
+    <span class="n">spectral_efficiency</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">CQI_to_64QAM_efficiency</span><span class="p">(</span><span class="n">cqi_i</span><span class="p">)</span> <span class="k">for</span> <span class="n">cqi_i</span> <span class="ow">in</span> <span class="n">cqi</span><span class="p">])</span>
+    <span class="c1">#print(spectral_efficiency,file=stderr)</span>
+    <span class="n">now</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    <span class="c1"># per-UE throughput...</span>
+    <span class="n">throughput_Mbps</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">.</span><span class="n">bw_MHz</span><span class="o">*</span><span class="p">(</span><span class="n">spectral_efficiency</span><span class="nd">@s</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">.</span><span class="n">subband_mask</span><span class="p">)</span><span class="o">/</span><span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">.</span><span class="n">n_subbands</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">.</span><span class="n">attached</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">.</span><span class="n">reports</span><span class="p">[</span><span class="s1">&#39;cqi&#39;</span><span class="p">][</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="p">(</span><span class="n">now</span><span class="p">,</span><span class="n">cqi</span><span class="p">)</span>
+    <span class="c1">#print(f&#39;UE={s.i} cqi report sent: {cqi}&#39;,file=stderr)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">.</span><span class="n">reports</span><span class="p">[</span><span class="s1">&#39;throughput_Mbps&#39;</span><span class="p">][</span><span class="n">s</span><span class="o">.</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="p">(</span><span class="n">now</span><span class="p">,</span><span class="n">throughput_Mbps</span><span class="p">,)</span>
+    <span class="k">return</span> <span class="n">throughput_Mbps</span></div>
+
+  <span class="k">def</span> <span class="nf">run_subband_cqi_report</span><span class="p">(</span><span class="n">s</span><span class="p">):</span> <span class="c1"># FIXME merge this with rsrp reporting</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+      <span class="c1">#if s.serving_cell is not None: # UE must be attached 2022-08-08</span>
+        <span class="n">s</span><span class="o">.</span><span class="n">send_subband_cqi_report</span><span class="p">()</span>
+        <span class="k">yield</span> <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">timeout</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">reporting_interval</span><span class="p">)</span></div>
+
+<span class="c1"># END class UE</span>
+
+<div class="viewcode-block" id="Sim"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Sim">[docs]</a><span class="k">class</span> <span class="nc">Sim</span><span class="p">:</span>
+  <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">  Class representing the complete simulation.</span>
+
+<span class="sd">  Parameters</span>
+<span class="sd">  ----------</span>
+<span class="sd">  params : dict</span>
+<span class="sd">    A dictionary of additional global parameters which need to be accessible to downstream functions. In the instance, these parameters will be available as ``sim.params``.  If ``params[&#39;profile&#39;]`` is set to a non-empty string, then a code profile will be performed and the results saved to the filename given by the string.  There will be some execution time overhead when profiling.</span>
+<span class="sd">  &#39;&#39;&#39;</span>
+
+  <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;fc_GHz&#39;</span><span class="p">:</span><span class="mf">3.5</span><span class="p">,</span><span class="s1">&#39;h_UT&#39;</span><span class="p">:</span><span class="mf">2.0</span><span class="p">,</span><span class="s1">&#39;h_BS&#39;</span><span class="p">:</span><span class="mf">20.0</span><span class="p">},</span><span class="n">show_params</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">rng_seed</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">__version__</span><span class="o">=</span><span class="n">__version__</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">params</span><span class="o">=</span><span class="n">params</span>
+    <span class="c1"># set default values for operating frequenct, user terminal height, and</span>
+    <span class="c1"># base station height...</span>
+    <span class="k">if</span> <span class="s1">&#39;fc_GHz&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;fc_GHz&#39;</span><span class="p">]</span><span class="o">=</span><span class="mf">3.5</span>
+    <span class="k">if</span> <span class="s1">&#39;h_UT&#39;</span>   <span class="ow">not</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;h_UT&#39;</span><span class="p">]</span><span class="o">=</span><span class="mf">2.0</span>
+    <span class="k">if</span> <span class="s1">&#39;h_BS&#39;</span>   <span class="ow">not</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;h_BS&#39;</span><span class="p">]</span><span class="o">=</span><span class="mf">20.0</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">env</span><span class="o">=</span><span class="n">simpy</span><span class="o">.</span><span class="n">Environment</span><span class="p">()</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">rng</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rng_seed</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">loggers</span><span class="o">=</span><span class="p">[]</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">scenario</span><span class="o">=</span><span class="kc">None</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">ric</span><span class="o">=</span><span class="kc">None</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">mme</span><span class="o">=</span><span class="kc">None</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">hetnet</span><span class="o">=</span><span class="kc">None</span> <span class="c1"># unknown at this point; will be set to True or False</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">cells</span><span class="o">=</span><span class="p">[]</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">UEs</span><span class="o">=</span><span class="p">[]</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">events</span><span class="o">=</span><span class="p">[]</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">cell_locations</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">linewidth</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+    <span class="n">pyv</span><span class="o">=</span><span class="n">pyversion</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="c1">#[:pyversion.index(&#39;(default&#39;)]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;python version=</span><span class="si">{</span><span class="n">pyv</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;numpy  version=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;simpy  version=</span><span class="si">{</span><span class="n">simpy</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;AIMM simulator version=</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">show_params</span><span class="p">:</span>
+      <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Simulation parameters:&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+      <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">param</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+
+  <span class="k">def</span> <span class="nf">_set_hetnet</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="c1">#  internal function only - decide whether we have a hetnet</span>
+    <span class="n">powers</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">get_power_dBm</span><span class="p">()</span> <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">hetnet</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">powers</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">1</span> <span class="c1"># powers are not all equal</span>
+
+<div class="viewcode-block" id="Sim.wait"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Sim.wait">[docs]</a>  <span class="k">def</span> <span class="nf">wait</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">interval</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Convenience function to avoid low-level reference to env.timeout().</span>
+<span class="sd">    ``loop`` functions in each class must yield this.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">timeout</span><span class="p">(</span><span class="n">interval</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Sim.make_cell"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Sim.make_cell">[docs]</a>  <span class="k">def</span> <span class="nf">make_cell</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Convenience function: make a new Cell instance and add it to the simulation; parameters as for the Cell class. Return the new Cell instance.  It is assumed that Cells never move after being created (i.e. the initial xyz[1] stays the same throughout the simulation).</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">cells</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Cell</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+    <span class="n">xyz</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">cells</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get_xyz</span><span class="p">()</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">cell_locations</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">s</span><span class="o">.</span><span class="n">cell_locations</span><span class="p">,</span><span class="n">xyz</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">cells</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Sim.make_UE"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Sim.make_UE">[docs]</a>  <span class="k">def</span> <span class="nf">make_UE</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Convenience function: make a new UE instance and add it to the simulation; parameters as for the UE class. Return the new UE instance.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">UEs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">UE</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">UEs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Sim.get_ncells"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Sim.get_ncells">[docs]</a>  <span class="k">def</span> <span class="nf">get_ncells</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return the current number of cells in the simulation.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Sim.get_nues"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Sim.get_nues">[docs]</a>  <span class="k">def</span> <span class="nf">get_nues</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return the current number of UEs in the simulation.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">UEs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Sim.get_UE_position"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Sim.get_UE_position">[docs]</a>  <span class="k">def</span> <span class="nf">get_UE_position</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">ue_i</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return the xyz position of UE[i] in the simulation.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">UEs</span><span class="p">[</span><span class="n">ue_i</span><span class="p">]</span><span class="o">.</span><span class="n">xyz</span></div>
+
+<div class="viewcode-block" id="Sim.get_average_throughput"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Sim.get_average_throughput">[docs]</a>  <span class="k">def</span> <span class="nf">get_average_throughput</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return the average throughput over all UEs attached to all cells.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">ave</span><span class="p">,</span><span class="n">k</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="mi">0</span>
+    <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">cells</span><span class="p">:</span>
+      <span class="n">k</span><span class="o">+=</span><span class="mi">1</span>
+      <span class="n">ave</span><span class="o">+=</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">get_average_throughput</span><span class="p">()</span><span class="o">-</span><span class="n">ave</span><span class="p">)</span><span class="o">/</span><span class="n">k</span>
+    <span class="k">return</span> <span class="n">ave</span></div>
+
+<div class="viewcode-block" id="Sim.add_logger"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Sim.add_logger">[docs]</a>  <span class="k">def</span> <span class="nf">add_logger</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">logger</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Add a logger to the simulation.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">logger</span><span class="p">,</span><span class="n">Logger</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">loggers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">logger</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Sim.add_loggers"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Sim.add_loggers">[docs]</a>  <span class="k">def</span> <span class="nf">add_loggers</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">loggers</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Add a sequence of loggers to the simulation.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">for</span> <span class="n">logger</span> <span class="ow">in</span> <span class="n">loggers</span><span class="p">:</span>
+      <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">logger</span><span class="p">,</span><span class="n">Logger</span><span class="p">)</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">loggers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">logger</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Sim.add_scenario"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Sim.add_scenario">[docs]</a>  <span class="k">def</span> <span class="nf">add_scenario</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">scenario</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Add a Scenario instance to the simulation.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scenario</span><span class="p">,</span><span class="n">Scenario</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">scenario</span><span class="o">=</span><span class="n">scenario</span></div>
+
+<div class="viewcode-block" id="Sim.add_ric"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Sim.add_ric">[docs]</a>  <span class="k">def</span> <span class="nf">add_ric</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">ric</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Add a RIC instance to the simulation.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ric</span><span class="p">,</span><span class="n">RIC</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">ric</span><span class="o">=</span><span class="n">ric</span></div>
+
+<div class="viewcode-block" id="Sim.add_MME"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Sim.add_MME">[docs]</a>  <span class="k">def</span> <span class="nf">add_MME</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">mme</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Add an MME instance to the simulation.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mme</span><span class="p">,</span><span class="n">MME</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">mme</span><span class="o">=</span><span class="n">mme</span></div>
+
+  <span class="k">def</span> <span class="nf">add_event</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+
+  <span class="k">def</span> <span class="nf">get_serving_cell</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">ue_i</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">ue_i</span><span class="o">&lt;</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">UEs</span><span class="p">):</span> <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">UEs</span><span class="p">[</span><span class="n">ue_i</span><span class="p">]</span><span class="o">.</span><span class="n">serving_cell</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+  <span class="k">def</span> <span class="nf">get_serving_cell_i</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">ue_i</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">ue_i</span><span class="o">&lt;</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">UEs</span><span class="p">):</span> <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">UEs</span><span class="p">[</span><span class="n">ue_i</span><span class="p">]</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">.</span><span class="n">i</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="Sim.get_nearest_cell"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Sim.get_nearest_cell">[docs]</a>  <span class="k">def</span> <span class="nf">get_nearest_cell</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">xy</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return the index of the geographical nearest cell (in 2 dimensions)</span>
+<span class="sd">    to the point xy.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">_nearest_weighted_point</span><span class="p">(</span><span class="n">xy</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span><span class="n">s</span><span class="o">.</span><span class="n">cell_locations</span><span class="p">[:,:</span><span class="mi">2</span><span class="p">],</span><span class="n">w</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Sim.get_strongest_cell_simple_pathloss_model"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Sim.get_strongest_cell_simple_pathloss_model">[docs]</a>  <span class="k">def</span> <span class="nf">get_strongest_cell_simple_pathloss_model</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">xyz</span><span class="p">,</span><span class="n">alpha</span><span class="o">=</span><span class="mf">3.5</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return the index of the cell delivering the strongest signal</span>
+<span class="sd">    at the point xyz (in 3 dimensions), with pathloss exponent alpha.</span>
+<span class="sd">    Note: antenna pattern is not used, so this function is deprecated,</span>
+<span class="sd">    but is adequate for initial UE attachment.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">p</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">from_dB</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">get_power_dBm</span><span class="p">())</span> <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">cells</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">_nearest_weighted_point</span><span class="p">(</span><span class="n">xyz</span><span class="p">,</span><span class="n">s</span><span class="o">.</span><span class="n">cell_locations</span><span class="p">,</span><span class="n">w</span><span class="o">=</span><span class="n">p</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="o">/</span><span class="n">alpha</span><span class="p">))[</span><span class="mi">1</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Sim.get_best_rsrp_cell"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Sim.get_best_rsrp_cell">[docs]</a>  <span class="k">def</span> <span class="nf">get_best_rsrp_cell</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">ue_i</span><span class="p">,</span><span class="n">dbg</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return the index of the cell delivering the highest RSRP at UE[i].</span>
+<span class="sd">    Relies on UE reports, and ``None`` is returned if there are not enough</span>
+<span class="sd">    reports (yet) to determine the desired output.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">k</span><span class="p">,</span><span class="n">best_rsrp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+    <span class="n">cell_rsrp_reports</span><span class="o">=</span><span class="nb">dict</span><span class="p">((</span><span class="n">cell</span><span class="o">.</span><span class="n">i</span><span class="p">,</span><span class="n">cell</span><span class="o">.</span><span class="n">reports</span><span class="p">[</span><span class="s1">&#39;rsrp&#39;</span><span class="p">])</span> <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">cells</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">ue_i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cell_rsrp_reports</span><span class="p">[</span><span class="n">cell</span><span class="o">.</span><span class="n">i</span><span class="p">]:</span> <span class="k">continue</span> <span class="c1"># no reports for this UE</span>
+      <span class="n">time</span><span class="p">,</span><span class="n">rsrp</span><span class="o">=</span><span class="n">cell_rsrp_reports</span><span class="p">[</span><span class="n">cell</span><span class="o">.</span><span class="n">i</span><span class="p">][</span><span class="n">ue_i</span><span class="p">]</span> <span class="c1"># (time, subband reports)</span>
+      <span class="k">if</span> <span class="n">dbg</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;get_best_rsrp_cell at </span><span class="si">{</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">now</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">: cell=</span><span class="si">{</span><span class="n">cell</span><span class="o">.</span><span class="n">i</span><span class="si">}</span><span class="s2"> UE=</span><span class="si">{</span><span class="n">ue_i</span><span class="si">}</span><span class="s2"> rsrp=&quot;</span><span class="p">,</span><span class="n">rsrp</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+      <span class="n">ave_rsrp</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">rsrp</span><span class="p">)</span> <span class="c1"># average RSRP over subbands</span>
+      <span class="k">if</span> <span class="n">ave_rsrp</span><span class="o">&gt;</span><span class="n">best_rsrp</span><span class="p">:</span> <span class="n">k</span><span class="p">,</span><span class="n">best_rsrp</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">i</span><span class="p">,</span><span class="n">ave_rsrp</span>
+    <span class="k">return</span> <span class="n">k</span></div>
+
+  <span class="k">def</span> <span class="nf">_start_loops</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="c1"># internal use only - start all main loops</span>
+    <span class="k">for</span> <span class="n">logger</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">loggers</span><span class="p">:</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">logger</span><span class="o">.</span><span class="n">loop</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">scenario</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">loop</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">ric</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">ric</span><span class="o">.</span><span class="n">loop</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">mme</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">mme</span><span class="o">.</span><span class="n">loop</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">events</span><span class="p">:</span> <span class="c1"># TODO ?</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">cells</span><span class="p">:</span> <span class="c1"># 2022-10-12 start Cells</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">loop</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">ue</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">UEs</span><span class="p">:</span> <span class="c1"># 2022-10-12 start UEs</span>
+      <span class="c1">#print(f&#39;About to start main loop of UE[{ue.i}]..&#39;)</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">ue</span><span class="o">.</span><span class="n">loop</span><span class="p">())</span>
+      <span class="c1">#s.env.process(UE.run_subband_cqi_report())</span>
+    <span class="c1">#sleep(2); exit()</span>
+
+  <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">until</span><span class="p">):</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">_set_hetnet</span><span class="p">()</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">until</span><span class="o">=</span><span class="n">until</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Sim: starting run for simulation time </span><span class="si">{</span><span class="n">until</span><span class="si">}</span><span class="s1"> seconds...&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">_start_loops</span><span class="p">()</span>
+    <span class="n">t0</span><span class="o">=</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">if</span> <span class="s1">&#39;profile&#39;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">params</span> <span class="ow">and</span> <span class="n">s</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;profile&#39;</span><span class="p">]:</span>
+      <span class="c1"># https://docs.python.org/3.6/library/profile.html</span>
+      <span class="c1"># to keep python 3.6 compatibility, we don&#39;t use all the</span>
+      <span class="c1"># features for profiling added in 3.8 or 3.9.</span>
+      <span class="n">profile_filename</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;profile&#39;</span><span class="p">]</span>
+      <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;profiling enabled: output file will be </span><span class="si">{</span><span class="n">profile_filename</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+      <span class="kn">import</span> <span class="nn">cProfile</span><span class="o">,</span><span class="nn">pstats</span><span class="o">,</span><span class="nn">io</span>
+      <span class="n">pr</span><span class="o">=</span><span class="n">cProfile</span><span class="o">.</span><span class="n">Profile</span><span class="p">()</span>
+      <span class="n">pr</span><span class="o">.</span><span class="n">enable</span><span class="p">()</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">until</span><span class="o">=</span><span class="n">until</span><span class="p">)</span> <span class="c1"># this is what is profiled</span>
+      <span class="n">pr</span><span class="o">.</span><span class="n">disable</span><span class="p">()</span>
+      <span class="n">strm</span><span class="o">=</span><span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span>
+      <span class="n">ps</span><span class="o">=</span><span class="n">pstats</span><span class="o">.</span><span class="n">Stats</span><span class="p">(</span><span class="n">pr</span><span class="p">,</span><span class="n">stream</span><span class="o">=</span><span class="n">strm</span><span class="p">)</span><span class="o">.</span><span class="n">sort_stats</span><span class="p">(</span><span class="s1">&#39;tottime&#39;</span><span class="p">)</span>
+      <span class="n">ps</span><span class="o">.</span><span class="n">print_stats</span><span class="p">()</span>
+      <span class="n">tbl</span><span class="o">=</span><span class="n">strm</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+      <span class="n">profile_file</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">profile_filename</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+      <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">tbl</span><span class="p">[:</span><span class="mi">50</span><span class="p">]:</span> <span class="nb">print</span><span class="p">(</span><span class="n">line</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">profile_file</span><span class="p">)</span>
+      <span class="n">profile_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+      <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;profile written to </span><span class="si">{</span><span class="n">profile_filename</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">until</span><span class="o">=</span><span class="n">until</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Sim: finished main loop in </span><span class="si">{</span><span class="p">(</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">)</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> seconds.&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+    <span class="c1">#print(f&#39;Sim: hetnet={s.hetnet}.&#39;,file=stderr)</span>
+    <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">mme</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">mme</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">ric</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">ric</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">logger</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">loggers</span><span class="p">:</span>
+      <span class="n">logger</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span></div>
+
+<span class="c1"># END class Sim</span>
+
+<div class="viewcode-block" id="Scenario"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Scenario">[docs]</a><span class="k">class</span> <span class="nc">Scenario</span><span class="p">:</span>
+
+  <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Base class for a simulation scenario. The default does nothing.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sim : Sim</span>
+<span class="sd">      Simulator instance which will manage this Scenario.</span>
+<span class="sd">    func : function</span>
+<span class="sd">      Function called to perform actions.</span>
+<span class="sd">    interval : float</span>
+<span class="sd">      Time interval between actions.</span>
+<span class="sd">    verbosity : int</span>
+<span class="sd">      Level of debugging output (0=none).</span>
+
+<span class="sd">  &#39;&#39;&#39;</span>
+
+  <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">sim</span><span class="p">,</span><span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">interval</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">=</span><span class="n">sim</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">func</span><span class="o">=</span><span class="n">func</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">verbosity</span><span class="o">=</span><span class="n">verbosity</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">interval</span><span class="o">=</span><span class="n">interval</span>
+
+<div class="viewcode-block" id="Scenario.loop"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Scenario.loop">[docs]</a>  <span class="k">def</span> <span class="nf">loop</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Main loop of Scenario class.  Should be overridden to provide different functionalities.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">func</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="p">)</span>
+      <span class="k">yield</span> <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">timeout</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">interval</span><span class="p">)</span></div></div>
+
+<span class="c1"># END class Scenario</span>
+
+<div class="viewcode-block" id="Logger"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Logger">[docs]</a><span class="k">class</span> <span class="nc">Logger</span><span class="p">:</span>
+
+  <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">  Represents a simulation logger. Multiple loggers (each with their own file) can be used if desired.</span>
+
+<span class="sd">  Parameters</span>
+<span class="sd">  ----------</span>
+<span class="sd">    sim : Sim</span>
+<span class="sd">      The Sim instance which will manage this Logger.</span>
+<span class="sd">    func : function</span>
+<span class="sd">      Function called to perform logginf action.</span>
+<span class="sd">    header : str</span>
+<span class="sd">      Arbitrary text to write to the top of the logfile.</span>
+<span class="sd">    f : file object</span>
+<span class="sd">      An open file object which will be written or appended to.</span>
+<span class="sd">    logging_interval : float</span>
+<span class="sd">      Time interval between logging actions.</span>
+
+<span class="sd">  &#39;&#39;&#39;</span>
+  <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">sim</span><span class="p">,</span><span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">header</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="n">f</span><span class="o">=</span><span class="n">stdout</span><span class="p">,</span><span class="n">logging_interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">np_array_to_str</span><span class="o">=</span><span class="n">np_array_to_str</span><span class="p">):</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">=</span><span class="n">sim</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">func</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">default_logger</span> <span class="k">if</span> <span class="n">func</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">func</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">f</span><span class="o">=</span><span class="n">f</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">np_array_to_str</span><span class="o">=</span><span class="n">np_array_to_str</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">logging_interval</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">logging_interval</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">header</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+
+  <span class="k">def</span> <span class="nf">default_logger</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">f</span><span class="o">=</span><span class="n">stdout</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">cells</span><span class="p">:</span>
+      <span class="k">for</span> <span class="n">ue_i</span> <span class="ow">in</span> <span class="n">cell</span><span class="o">.</span><span class="n">reports</span><span class="p">[</span><span class="s1">&#39;cqi&#39;</span><span class="p">]:</span>
+        <span class="n">rep</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">reports</span><span class="p">[</span><span class="s1">&#39;cqi&#39;</span><span class="p">][</span><span class="n">ue_i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">rep</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="k">continue</span>
+        <span class="n">cqi</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">np_array_to_str</span><span class="p">(</span><span class="n">rep</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">cell</span><span class="o">.</span><span class="n">i</span><span class="si">}</span><span class="se">\t</span><span class="si">{</span><span class="n">ue_i</span><span class="si">}</span><span class="se">\t</span><span class="si">{</span><span class="n">cqi</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Logger.loop"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Logger.loop">[docs]</a>  <span class="k">def</span> <span class="nf">loop</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Main loop of Logger class.</span>
+<span class="sd">    Can be overridden to provide custom functionality.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">f</span><span class="p">)</span>
+      <span class="k">yield</span> <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">timeout</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">logging_interval</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Logger.finalize"><a class="viewcode-back" href="../../index.html#AIMM_simulator.Logger.finalize">[docs]</a>  <span class="k">def</span> <span class="nf">finalize</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Function called at end of simulation, to implement any required finalization actions.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">pass</span></div></div>
+
+<span class="c1"># END class Logger</span>
+
+<div class="viewcode-block" id="MME"><a class="viewcode-back" href="../../index.html#AIMM_simulator.MME">[docs]</a><span class="k">class</span> <span class="nc">MME</span><span class="p">:</span>
+  <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">  Represents a MME, for handling UE handovers.</span>
+
+<span class="sd">  Parameters</span>
+<span class="sd">  ----------</span>
+<span class="sd">    sim : Sim</span>
+<span class="sd">      Sim instance which will manage this Scenario.</span>
+<span class="sd">    interval : float</span>
+<span class="sd">      Time interval between checks for handover actions.</span>
+<span class="sd">    verbosity : int</span>
+<span class="sd">      Level of debugging output (0=none).</span>
+<span class="sd">    strategy : str</span>
+<span class="sd">      Handover strategy; possible values are ``strongest_cell_simple_pathloss_model`` (default), or ``best_rsrp_cell``.</span>
+<span class="sd">    anti_pingpong : float</span>
+<span class="sd">      If greater than zero, then a handover pattern x-&gt;y-&gt;x between cells x and y is not allowed within this number of seconds. Default is 0.0, meaning pingponging is not suppressed.</span>
+<span class="sd">  &#39;&#39;&#39;</span>
+
+  <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">sim</span><span class="p">,</span><span class="n">interval</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span><span class="n">strategy</span><span class="o">=</span><span class="s1">&#39;strongest_cell_simple_pathloss_model&#39;</span><span class="p">,</span><span class="n">anti_pingpong</span><span class="o">=</span><span class="mf">30.0</span><span class="p">,</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">=</span><span class="n">sim</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">interval</span><span class="o">=</span><span class="n">interval</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">strategy</span><span class="o">=</span><span class="n">strategy</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">anti_pingpong</span><span class="o">=</span><span class="n">anti_pingpong</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">verbosity</span><span class="o">=</span><span class="n">verbosity</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;MME: using handover strategy </span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">strategy</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MME.do_handovers"><a class="viewcode-back" href="../../index.html#AIMM_simulator.MME.do_handovers">[docs]</a>  <span class="k">def</span> <span class="nf">do_handovers</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Check whether handovers are required, and do them if so.</span>
+<span class="sd">    Normally called from loop(), but can be called manually if required.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">for</span> <span class="n">ue</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">UEs</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">ue</span><span class="o">.</span><span class="n">serving_cell</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="k">continue</span> <span class="c1"># no handover needed for this UE. 2022-08-08 added None test</span>
+      <span class="n">oldcelli</span><span class="o">=</span><span class="n">ue</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">.</span><span class="n">i</span> <span class="c1"># 2022-08-26</span>
+      <span class="n">CQI_before</span><span class="o">=</span><span class="n">ue</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">.</span><span class="n">get_UE_CQI</span><span class="p">(</span><span class="n">ue</span><span class="o">.</span><span class="n">i</span><span class="p">)</span>
+      <span class="n">previous</span><span class="p">,</span><span class="n">tm</span><span class="o">=</span><span class="n">ue</span><span class="o">.</span><span class="n">serving_cell_ids</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+      <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">strategy</span><span class="o">==</span><span class="s1">&#39;strongest_cell_simple_pathloss_model&#39;</span><span class="p">:</span>
+        <span class="n">celli</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">get_strongest_cell_simple_pathloss_model</span><span class="p">(</span><span class="n">ue</span><span class="o">.</span><span class="n">xyz</span><span class="p">)</span>
+      <span class="k">elif</span> <span class="n">s</span><span class="o">.</span><span class="n">strategy</span><span class="o">==</span><span class="s1">&#39;best_rsrp_cell&#39;</span><span class="p">:</span>
+        <span class="n">celli</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">get_best_rsrp_cell</span><span class="p">(</span><span class="n">ue</span><span class="o">.</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">celli</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+          <span class="n">celli</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">get_strongest_cell_simple_pathloss_model</span><span class="p">(</span><span class="n">ue</span><span class="o">.</span><span class="n">xyz</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;MME.loop: strategy </span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">strategy</span><span class="si">}</span><span class="s1"> not implemented, quitting!&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="n">exit</span><span class="p">()</span>
+      <span class="k">if</span> <span class="n">celli</span><span class="o">==</span><span class="n">ue</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">.</span><span class="n">i</span><span class="p">:</span> <span class="k">continue</span>
+      <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">anti_pingpong</span><span class="o">&gt;</span><span class="mf">0.0</span> <span class="ow">and</span> <span class="n">previous</span><span class="o">==</span><span class="n">celli</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">now</span><span class="o">-</span><span class="n">tm</span><span class="o">&lt;</span><span class="n">s</span><span class="o">.</span><span class="n">anti_pingpong</span><span class="p">:</span>
+          <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">verbosity</span><span class="o">&gt;</span><span class="mi">2</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;t=</span><span class="si">{</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">now</span><span class="p">)</span><span class="si">:</span><span class="s1">8.2f</span><span class="si">}</span><span class="s1"> handover of UE[</span><span class="si">{</span><span class="n">ue</span><span class="o">.</span><span class="n">i</span><span class="si">}</span><span class="s1">] suppressed by anti_pingpong heuristic.&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+          <span class="k">continue</span> <span class="c1"># not enough time since we were last on this cell</span>
+      <span class="n">ue</span><span class="o">.</span><span class="n">detach</span><span class="p">(</span><span class="n">quiet</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+      <span class="n">ue</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">cells</span><span class="p">[</span><span class="n">celli</span><span class="p">])</span>
+      <span class="n">ue</span><span class="o">.</span><span class="n">send_rsrp_reports</span><span class="p">()</span> <span class="c1"># make sure we have reports immediately</span>
+      <span class="n">ue</span><span class="o">.</span><span class="n">send_subband_cqi_report</span><span class="p">()</span>
+      <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">verbosity</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">CQI_after</span><span class="o">=</span><span class="n">ue</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">.</span><span class="n">get_UE_CQI</span><span class="p">(</span><span class="n">ue</span><span class="o">.</span><span class="n">i</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;t=</span><span class="si">{</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">now</span><span class="p">)</span><span class="si">:</span><span class="s1">8.2f</span><span class="si">}</span><span class="s1"> handover of UE[</span><span class="si">{</span><span class="n">ue</span><span class="o">.</span><span class="n">i</span><span class="si">:</span><span class="s1">3</span><span class="si">}</span><span class="s1">] from Cell[</span><span class="si">{</span><span class="n">oldcelli</span><span class="si">:</span><span class="s1">3</span><span class="si">}</span><span class="s1">] to Cell[</span><span class="si">{</span><span class="n">ue</span><span class="o">.</span><span class="n">serving_cell</span><span class="o">.</span><span class="n">i</span><span class="si">:</span><span class="s1">3</span><span class="si">}</span><span class="s1">]&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">,</span><span class="n">end</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;CQI change </span><span class="si">{</span><span class="n">CQI_before</span><span class="si">}</span><span class="s1"> -&gt; </span><span class="si">{</span><span class="n">CQI_after</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MME.loop"><a class="viewcode-back" href="../../index.html#AIMM_simulator.MME.loop">[docs]</a>  <span class="k">def</span> <span class="nf">loop</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Main loop of MME.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">yield</span> <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">timeout</span><span class="p">(</span><span class="mf">0.5</span><span class="o">*</span><span class="n">s</span><span class="o">.</span><span class="n">interval</span><span class="p">)</span> <span class="c1"># stagger the intervals</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;MME started at </span><span class="si">{</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">now</span><span class="p">)</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">, using strategy=&quot;</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">strategy</span><span class="si">}</span><span class="s1">&quot; and anti_pingpong=</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">anti_pingpong</span><span class="si">:</span><span class="s1">.0f</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+      <span class="n">s</span><span class="o">.</span><span class="n">do_handovers</span><span class="p">()</span>
+      <span class="k">yield</span> <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">timeout</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">interval</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MME.finalize"><a class="viewcode-back" href="../../index.html#AIMM_simulator.MME.finalize">[docs]</a>  <span class="k">def</span> <span class="nf">finalize</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Function called at end of simulation, to implement any required finalization actions.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">pass</span></div></div>
+
+<span class="c1"># END class MME</span>
+
+<div class="viewcode-block" id="RIC"><a class="viewcode-back" href="../../index.html#AIMM_simulator.RIC">[docs]</a><span class="k">class</span> <span class="nc">RIC</span><span class="p">:</span>
+  <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">  Base class for a RIC, for hosting xApps.  The default does nothing.</span>
+
+<span class="sd">  Parameters</span>
+<span class="sd">  ----------</span>
+<span class="sd">    sim : Sim</span>
+<span class="sd">      Simulator instance which will manage this Scenario.</span>
+<span class="sd">    interval : float</span>
+<span class="sd">      Time interval between RIC actions.</span>
+<span class="sd">    verbosity : int</span>
+<span class="sd">      Level of debugging output (0=none).</span>
+<span class="sd">  &#39;&#39;&#39;</span>
+
+  <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">sim</span><span class="p">,</span><span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">=</span><span class="n">sim</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">interval</span><span class="o">=</span><span class="n">interval</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">verbosity</span><span class="o">=</span><span class="n">verbosity</span>
+
+<div class="viewcode-block" id="RIC.finalize"><a class="viewcode-back" href="../../index.html#AIMM_simulator.RIC.finalize">[docs]</a>  <span class="k">def</span> <span class="nf">finalize</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Function called at end of simulation, to implement any required finalization actions.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="RIC.loop"><a class="viewcode-back" href="../../index.html#AIMM_simulator.RIC.loop">[docs]</a>  <span class="k">def</span> <span class="nf">loop</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Main loop of RIC class.  Must be overridden to provide functionality.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;RIC started at </span><span class="si">{</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">now</span><span class="p">)</span><span class="si">:</span><span class="s1">.2</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+      <span class="k">yield</span> <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">timeout</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">interval</span><span class="p">)</span></div></div>
+<span class="c1"># END class RIC</span>
+
+<span class="k">if</span> <span class="vm">__name__</span><span class="o">==</span><span class="s1">&#39;__main__&#39;</span><span class="p">:</span> <span class="c1"># a simple self-test</span>
+
+  <span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span><span class="n">linewidth</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+
+  <span class="k">class</span> <span class="nc">MyLogger</span><span class="p">(</span><span class="n">Logger</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">loop</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+      <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">cells</span><span class="p">:</span>
+          <span class="k">if</span> <span class="n">cell</span><span class="o">.</span><span class="n">i</span><span class="o">!=</span><span class="mi">0</span><span class="p">:</span> <span class="k">continue</span> <span class="c1"># cell[0] only</span>
+          <span class="k">for</span> <span class="n">ue_i</span> <span class="ow">in</span> <span class="n">cell</span><span class="o">.</span><span class="n">reports</span><span class="p">[</span><span class="s1">&#39;cqi&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">ue_i</span><span class="o">!=</span><span class="mi">0</span><span class="p">:</span> <span class="k">continue</span> <span class="c1"># UE[0] only</span>
+            <span class="n">rep</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">reports</span><span class="p">[</span><span class="s1">&#39;cqi&#39;</span><span class="p">][</span><span class="n">ue_i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">rep</span><span class="p">:</span> <span class="k">continue</span>
+            <span class="n">xy</span><span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">np_array_to_str</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">UEs</span><span class="p">[</span><span class="n">ue_i</span><span class="p">]</span><span class="o">.</span><span class="n">xyz</span><span class="p">[:</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">cqi</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">np_array_to_str</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">reports</span><span class="p">[</span><span class="s1">&#39;cqi&#39;</span><span class="p">][</span><span class="n">ue_i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">tp</span><span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">np_array_to_str</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">reports</span><span class="p">[</span><span class="s1">&#39;throughput_Mbps&#39;</span><span class="p">][</span><span class="n">ue_i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">now</span><span class="si">:</span><span class="s1">.1f</span><span class="si">}</span><span class="se">\t</span><span class="si">{</span><span class="n">xy</span><span class="si">}</span><span class="se">\t</span><span class="si">{</span><span class="n">cqi</span><span class="si">}</span><span class="se">\t</span><span class="si">{</span><span class="n">tp</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="n">s</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">timeout</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">logging_interval</span><span class="p">)</span>
+
+  <span class="k">def</span> <span class="nf">test_01</span><span class="p">(</span><span class="n">ncells</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span><span class="n">nues</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span><span class="n">n_subbands</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">until</span><span class="o">=</span><span class="mf">1000.0</span><span class="p">):</span>
+    <span class="n">sim</span><span class="o">=</span><span class="n">Sim</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncells</span><span class="p">):</span>
+      <span class="n">sim</span><span class="o">.</span><span class="n">make_cell</span><span class="p">(</span><span class="n">n_subbands</span><span class="o">=</span><span class="n">n_subbands</span><span class="p">,</span><span class="n">MIMO_gain_dB</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">sim</span><span class="o">.</span><span class="n">cells</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xyz</span><span class="p">((</span><span class="mf">500.0</span><span class="p">,</span><span class="mf">500.0</span><span class="p">,</span><span class="mf">20.0</span><span class="p">))</span> <span class="c1"># fix cell[0]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nues</span><span class="p">):</span>
+      <span class="n">ue</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">make_UE</span><span class="p">(</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+      <span class="k">if</span> <span class="mi">0</span><span class="o">==</span><span class="n">i</span><span class="p">:</span> <span class="c1"># force ue[0] to attach to cell[0]</span>
+        <span class="n">ue</span><span class="o">.</span><span class="n">set_xyz</span><span class="p">([</span><span class="mf">501.0</span><span class="p">,</span><span class="mf">502.0</span><span class="p">,</span><span class="mf">2.0</span><span class="p">],</span><span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+      <span class="n">ue</span><span class="o">.</span><span class="n">attach_to_nearest_cell</span><span class="p">()</span>
+    <span class="n">scenario</span><span class="o">=</span><span class="n">Scenario</span><span class="p">(</span><span class="n">sim</span><span class="p">,</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">=</span><span class="n">MyLogger</span><span class="p">(</span><span class="n">sim</span><span class="p">,</span><span class="n">logging_interval</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">ric</span><span class="o">=</span><span class="n">RIC</span><span class="p">(</span><span class="n">sim</span><span class="p">)</span>
+    <span class="n">sim</span><span class="o">.</span><span class="n">add_logger</span><span class="p">(</span><span class="n">logger</span><span class="p">)</span>
+    <span class="n">sim</span><span class="o">.</span><span class="n">add_scenario</span><span class="p">(</span><span class="n">scenario</span><span class="p">)</span>
+    <span class="n">sim</span><span class="o">.</span><span class="n">add_ric</span><span class="p">(</span><span class="n">ric</span><span class="p">)</span>
+    <span class="n">sim</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">until</span><span class="o">=</span><span class="n">until</span><span class="p">)</span>
+
+  <span class="n">test_01</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">AIMM simulator 2.0.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Keith Briggs.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>
