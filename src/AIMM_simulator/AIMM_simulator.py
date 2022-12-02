@@ -8,7 +8,7 @@
 # |       |      |
 # UE UE  UE UE  UE UE ...
 
-__version__='2.0.0'
+__version__='2.0.1'
 '''The AIMM simulator emulates a cellular radio system roughly following 5G concepts and channel models.'''
 
 from os.path import basename

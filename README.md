@@ -20,7 +20,7 @@ Three ways are possible:
 
 * The simplest way, direct from PyPI: ``pip install AIMM-simulator``. This will not always get the latest version.
 
-* Download the wheel, typically ``dist/aimm_simulator-2.0.0-py3-none-any.whl`` from github, and run ``pip install <wheel>``.
+* Download the wheel, typically ``dist/aimm_simulator-2.x.y-py3-none-any.whl`` from github, and run ``pip install <wheel>``.
 
 * Alternatively, the package can be installed by downloading the complete repository (using the green ``<> Code ⌄`` button) as a zip, unpacking it, and then doing ``make install_local`` from inside the unpacked zip. 
 
@@ -30,7 +30,7 @@ After installation, run a test with ``python3 examples/basic_test.py``.
 Simulator block diagram
 -----------------------
 
-The diagram shows the main classes in the code and the relationships between them. 
+The diagram below (not visible on pypi.org) shows the main classes in the code and the relationships between them. 
 
 ![AIMM Simulator block diagram](https://github.com/keithbriggs/AIMM-simulator/blob/main/doc/sphinx_source/AIMM_Simulator_block_diagram.png)
 
