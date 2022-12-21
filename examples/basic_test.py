@@ -10,3 +10,4 @@ if __name__=='__main__':
   ue.attach_to_nearest_cell()
   sim.add_logger(Logger(sim,logging_interval=10))
   sim.run(until=100)
+  print(f'ue.get_SINR_dB={ue.get_SINR_dB()}')

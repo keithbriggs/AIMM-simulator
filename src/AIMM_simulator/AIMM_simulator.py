@@ -8,7 +8,7 @@
 # |       |      |
 # UE UE  UE UE  UE UE ...
 
-__version__='2.0.1'
+__version__='2.0.2'
 '''The AIMM simulator emulates a cellular radio system roughly following 5G concepts and channel models.'''
 
 from os.path import basename
@@ -232,10 +232,11 @@ class Cell:
   def get_UE_throughput(s,ue_i): # FIXME do we want an array over subbands?
     '''
     Return the total current throughput in Mb/s of UE[i] in the simulation.
+    The value -np.inf indicates that there is no current report.
     '''
     reports=s.reports['throughput_Mbps']
     if ue_i in reports: return reports[ue_i][1]
-    return -np.inf # [-np.inf]*s.n_subbands # special value to indicate no report
+    return -np.inf # special value to indicate no report
 
   def get_UE_CQI(s,ue_i):
     '''
@@ -359,6 +360,7 @@ class UE:
     s.verbosity=verbosity
     s.noise_power_dBm=-140.0
     s.cqi=None
+    s.sinr_dB=None
     # Keith Briggs 2022-10-12 loops now started in Sim.__init__
     #s.sim.env.process(s.run_subband_cqi_report())
     #s.sim.env.process(s.loop()) # this does reports to all cells
@@ -472,6 +474,13 @@ class UE:
     '''
     return s.cqi
 
+  def get_SINR_dB(s):
+    '''
+    Return the current SINR of this UE, as an array across all subbands.
+    The return value ``None`` indicates that there is no current report.
+    '''
+    return s.sinr_dB
+
   def send_rsrp_reports(s,threshold=-120.0):
     '''
     Send RSRP reports in dBm to all cells for which it is over the threshold.
@@ -499,7 +508,7 @@ class UE:
     For this UE, send an array of CQI reports, one for each subband; and a total throughput report, to the serving cell.
     What is sent is a 2-tuple (current time, array of reports).
     For RSRP reports, use the function ``send_rsrp_reports``.
-    Also save the CQI[1]s in s.cqi, and return the throughput value.
+    Also saves the CQI[1]s in s.cqi, and returns the throughput value.
     '''
     if s.serving_cell is None: return 0.0 # 2022-08-08 detached
     interference=from_dB(s.noise_power_dBm)*np.ones(s.serving_cell.n_subbands)
@@ -517,15 +526,13 @@ class UE:
         received_interference_power=antenna_gain_dB+cell.power_dBm-pl_dB
         interference+=from_dB(received_interference_power)*cell.subband_mask
     rsrp=from_dB(rsrp_dBm)
-    sinr_dB=to_dB(rsrp/interference) # scalar/array
-    s.cqi=cqi=SINR_to_CQI(sinr_dB)
+    s.sinr_dB=to_dB(rsrp/interference) # scalar/array
+    s.cqi=cqi=SINR_to_CQI(s.sinr_dB)
     spectral_efficiency=np.array([CQI_to_64QAM_efficiency(cqi_i) for cqi_i in cqi])
-    #print(spectral_efficiency,file=stderr)
     now=float(s.sim.env.now)
     # per-UE throughput...
     throughput_Mbps=s.serving_cell.bw_MHz*(spectral_efficiency@s.serving_cell.subband_mask)/s.serving_cell.n_subbands/len(s.serving_cell.attached)
     s.serving_cell.reports['cqi'][s.i]=(now,cqi)
-    #print(f'UE={s.i} cqi report sent: {cqi}',file=stderr)
     s.serving_cell.reports['throughput_Mbps'][s.i]=(now,throughput_Mbps,)
     return throughput_Mbps
 
