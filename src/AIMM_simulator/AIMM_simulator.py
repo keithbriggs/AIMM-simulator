@@ -369,7 +369,7 @@ class UE:
     return f'UE(index={s.i},xyz={s.xyz},serving_cell={s.serving_cell})'
 
   def set_f_callback(s,f_callback,**kwargs):
-    ' Add a callack function to the main loop of this UE '
+    ' Add a callback function to the main loop of this UE '
     s.f_callback=f_callback
     s.f_callback_kwargs=kwargs
 
