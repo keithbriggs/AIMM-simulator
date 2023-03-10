@@ -16,16 +16,16 @@ except:
 class Plane:
   ''' Represents an infinite plane, defined by a point on the plane and a normal vector '''
   def __init__(s,point,normal):
-    s.point =np.array(point ,dtype=np.float)
-    s.normal=np.array(normal,dtype=np.float)
+    s.point =np.array(point ,dtype=float)
+    s.normal=np.array(normal,dtype=float)
   def __repr__(s):
     return f'Plane(point={s.point},normal={s.normal})'
 
 class Ray:
   ''' Represents a ray, defined by a tail (starting point) and a direction vector '''
   def __init__(s,tail,dv):
-    s.tail=np.array(tail,dtype=np.float)
-    s.dv  =np.array(dv,  dtype=np.float)
+    s.tail=np.array(tail,dtype=float)
+    s.dv  =np.array(dv,  dtype=float)
     s.dv/=np.linalg.norm(s.dv)
   def __repr__(s):
     return f'Ray({s.tail},{s.dv})'
@@ -71,9 +71,9 @@ class Ray:
 class Triangle:
   ''' Represents a planar triangle in 3d space, defined by three points.  Unoriented. '''
   def __init__(s,p0,p1,p2):
-    s.p0=np.array(p0,dtype=np.float)
-    s.p1=np.array(p1,dtype=np.float)
-    s.p2=np.array(p2,dtype=np.float)
+    s.p0=np.array(p0,dtype=float)
+    s.p1=np.array(p1,dtype=float)
+    s.p2=np.array(p2,dtype=float)
     s.side0=s.p1-s.p0
     s.side1=s.p2-s.p0
     s.normal=np.cross(s.side0,s.side1)
@@ -239,7 +239,7 @@ def test_01():
 def cube(a,b,c=(0.0,0.0,0.0)):
   # deprecated - use block()
   ' cube c+[a,b]x[a,b]x[a,b], with each face a square Panel of two Triangles '
-  c=np.array(c,dtype=np.float)
+  c=np.array(c,dtype=float)
   return (
     Panel([Triangle((a,a,a),(a,b,a),(b,b,a))+c,Triangle((a,a,a),(b,a,a),(b,b,a))+c]),
     Panel([Triangle((a,a,b),(a,b,b),(b,b,b))+c,Triangle((a,a,b),(b,a,b),(b,b,b))+c]),

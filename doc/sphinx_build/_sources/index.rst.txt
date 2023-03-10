@@ -38,7 +38,7 @@ Three ways are possible:
 
 * The simplest way, direct from PyPI: ``pip install AIMM-simulator``. This will not always get the latest version.
 
-* Download the wheel, typically ``dist/aimm_simulator-2.0.0-py3-none-any.whl`` from github, and run ``pip install <wheel>``.
+* Download the wheel, typically ``dist/aimm_simulator-2.x.y-py3-none-any.whl`` from github, and run ``pip install <wheel>``.
 
 * Alternatively, the package can be installed by downloading the complete repository (using the green ``<> Code ⌄`` button) as a zip, unpacking it, and then doing ``make install_local`` from inside the unpacked zip. 
 

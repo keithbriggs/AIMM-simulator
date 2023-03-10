@@ -7,9 +7,9 @@ test:
 run_all_examples:
 	bash examples/run_all_examples.sh
 
-install_local:
+install_local: # FIXME make sure latest vesion is installed
 	make build
-	pip3 install --force-reinstall dist/aimm_simulator-2.0.0-py3-none-any.whl
+	pip3 install --force-reinstall dist/aimm_simulator-2.0.2-py3-none-any.whl
 
 build:
 	python3 -m build

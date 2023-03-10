@@ -340,7 +340,7 @@ class UE:
     s.serving_cell_ids=deque([(-1,None)]*10,maxlen=10)
     s.reporting_interval=reporting_interval
     if xyz is not None:
-      s.xyz=np.array(xyz,dtype=np.float)
+      s.xyz=np.array(xyz,dtype=float)
     else:
       s.xyz=250.0+500.0*s.sim.rng.random(3)
       s.xyz[2]=h_UT

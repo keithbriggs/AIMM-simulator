@@ -39,7 +39,7 @@
 </div>
 <div class="section" id="aimm-simulator-documentation">
 <h1>AIMM simulator documentation<a class="headerlink" href="#aimm-simulator-documentation" title="Permalink to this headline">¶</a></h1>
-<p>Last modified: 2022-11-30T09:59</p>
+<p>Last modified: 2023-01-24T14:09</p>
 <div class="section" id="purpose">
 <h2>Purpose<a class="headerlink" href="#purpose" title="Permalink to this headline">¶</a></h2>
 <p>The AIMM simulator emulates a cellular radio system roughly following 5G concepts and channel models. The intention is to have an easy-to-use and fast system written in pure Python with minimal dependencies. It is especially designed to be suitable for interfacing to AI engines such as <code class="docutils literal notranslate"><span class="pre">tensorflow</span></code> or <code class="docutils literal notranslate"><span class="pre">pytorch</span></code>, and it is not a principal aim for it to be extremely accurate at the level of the radio channel. The simulator was developed for the <a class="reference external" href="https://aimm.celticnext.eu">AIMM project</a>.</p>
@@ -59,7 +59,7 @@
 <p>Three ways are possible:</p>
 <ul class="simple">
 <li>The simplest way, direct from PyPI: <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">AIMM-simulator</span></code>. This will not always get the latest version.</li>
-<li>Download the wheel, typically <code class="docutils literal notranslate"><span class="pre">dist/aimm_simulator-2.0.0-py3-none-any.whl</span></code> from github, and run <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&lt;wheel&gt;</span></code>.</li>
+<li>Download the wheel, typically <code class="docutils literal notranslate"><span class="pre">dist/aimm_simulator-2.x.y-py3-none-any.whl</span></code> from github, and run <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&lt;wheel&gt;</span></code>.</li>
 <li>Alternatively, the package can be installed by downloading the complete repository (using the green <code class="docutils literal notranslate"><span class="pre">&lt;&gt;</span> <span class="pre">Code</span> <span class="pre">⌄</span></code> button) as a zip, unpacking it, and then doing <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install_local</span></code> from inside the unpacked zip.</li>
 </ul>
 <p>After installation, run a test with <code class="docutils literal notranslate"><span class="pre">python3</span> <span class="pre">examples/basic_test.py</span></code>.</p>
@@ -1062,7 +1062,8 @@ Return the new power.</p>
 <dl class="method">
 <dt id="AIMM_simulator.Cell.get_UE_throughput">
 <code class="descname">get_UE_throughput</code><span class="sig-paren">(</span><em>ue_i</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#Cell.get_UE_throughput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.Cell.get_UE_throughput" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the total current throughput in Mb/s of UE[i] in the simulation.</p>
+<dd><p>Return the total current throughput in Mb/s of UE[i] in the simulation.
+The value -np.inf indicates that there is no current report.</p>
 </dd></dl>
 
 <dl class="method">
@@ -1213,6 +1214,13 @@ behaviour, use the MME module.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="AIMM_simulator.UE.get_SINR_dB">
+<code class="descname">get_SINR_dB</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#UE.get_SINR_dB"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.UE.get_SINR_dB" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the current SINR of this UE, as an array across all subbands.
+The return value <code class="docutils literal notranslate"><span class="pre">None</span></code> indicates that there is no current report.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="AIMM_simulator.UE.get_serving_cell">
 <code class="descname">get_serving_cell</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#UE.get_serving_cell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.UE.get_serving_cell" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the current serving Cell object (not index) for this UE instance.</p>
@@ -1249,13 +1257,13 @@ Subbands not handled.</p>
 <dd><p>For this UE, send an array of CQI reports, one for each subband; and a total throughput report, to the serving cell.
 What is sent is a 2-tuple (current time, array of reports).
 For RSRP reports, use the function <code class="docutils literal notranslate"><span class="pre">send_rsrp_reports</span></code>.
-Also save the CQI[1]s in s.cqi, and return the throughput value.</p>
+Also saves the CQI[1]s in s.cqi, and returns the throughput value.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="AIMM_simulator.UE.set_f_callback">
 <code class="descname">set_f_callback</code><span class="sig-paren">(</span><em>f_callback</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/AIMM_simulator/AIMM_simulator.html#UE.set_f_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AIMM_simulator.UE.set_f_callback" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add a callack function to the main loop of this UE</p>
+<dd><p>Add a callback function to the main loop of this UE</p>
 </dd></dl>
 
 <dl class="method">
@@ -1663,7 +1671,7 @@ to ensure that this pathloss model is actually applicable.</p>
 -column_to_axis_map COLUMN_TO_AXIS_MAP column_to_axis_map (dict)
 </pre></div>
 </div>
-<p>Last modified: 2022-11-30T09:59</p>
+<p>Last modified: 2023-01-24T14:09</p>
 </div>
 </div>
 </div>
