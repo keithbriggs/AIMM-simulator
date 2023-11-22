@@ -1,6 +1,7 @@
 # Keith Briggs 2022-11-14 hetnet example, no UE mobility.
 # python3 AIMM_simulator_example_n6.py | ./realtime_plotter.py -np=1 -tm=100 -ylims='(0,0.25)' -ylabels='{0: "average downlink throughput over all UEs"}' -fnb='img/AIMM_simulator_example_n6'
-
+from sys import path
+path = "/home/davygx/Documents/haps_dev_ge/AIMM-simulator/src/AIMM_simulator" + path
 from sys import stderr
 from numpy.random import seed
 from AIMM_simulator import Sim,Logger,Scenario

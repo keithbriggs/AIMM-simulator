@@ -2,7 +2,8 @@
 # Example with antenna pattern
 # python3 AIMM_simulator_example_n5.py | cut -f1,4 | p
 # python3 AIMM_simulator_example_n5.py | ./realtime_plotter_03.py -np=3 -tm=500 -ylims='{0: (-100,100), 1: (-100,100), 2: (0,45)}' -ylabels='{0: "UE[0] $x$", 1: "UE[0] $y$", 2: "UE[0] throughput"}' -fnb='img/AIMM_simulator_example_n5'
-
+from sys import path
+path = "/home/davygx/Documents/haps_dev_ge/AIMM-simulator/src/AIMM_simulator" + path
 from math import cos,sin,pi
 from numpy.random import seed
 from AIMM_simulator import Sim,Scenario,Logger,to_dB

@@ -1,6 +1,7 @@
 # Keith Briggs 2022-11-14 hetnet example, with UE mobility.
 # python3 AIMM_simulator_example_n7.py | ./realtime_plotter_03.py -np=4 -tm=2000 -ylims='{0: (0,10), 1: (0,1000), 2: (0,1000), 3: (0,30)}' -ylabels='{0: "UE[0] throughput", 1: "UE[0] $x$", 2: "UE[0] $y$", 3: "UE[0] serving cell"}' -fnb='img/AIMM_simulator_example_n7'
-
+from sys import path
+path = "/home/davygx/Documents/haps_dev_ge/AIMM-simulator/src/AIMM_simulator" + path
 from numpy.random import seed,standard_normal
 from AIMM_simulator import Sim,Logger,Scenario,MME,np_array_to_str
 
