@@ -1,7 +1,7 @@
 # Keith Briggs 2022-11-14 macros, with UE mobility and CQI logging.
 # time python3 AIMM_simulator_example_n8.py && e example_n8.pdf &
-from sys import path
-path = ["/home/davygx/Documents/haps_dev_ge/AIMM-simulator/src/AIMM_simulator"] + path
+# from sys import path
+# path = ["/home/davygx/Documents/haps_dev_ge/AIMM-simulator/src/AIMM_simulator"] + path
 from math import cos,sin,pi
 import numpy as np
 from numpy.random import seed,standard_normal
