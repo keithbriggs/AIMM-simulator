@@ -1,13 +1,11 @@
+# Keith Briggs 2024-02-18 removed direct use of Axes3D
 # Keith Briggs 2021-11-22 was geometry_3d_01.py
-# python version of some parts of geometry_3d.cc
-# python3 geometry_3d_01.py
 
 from sys import stderr,exit
 import numpy as np
 try: # if matplotlib is not installed, turn off plotting...
   from matplotlib import rcParams as matplotlib_rcParams
   import matplotlib.pyplot as plt
-  from mpl_toolkits.mplot3d import Axes3D
   from mpl_toolkits.mplot3d.art3d import Poly3DCollection
   from fig_timestamp import fig_timestamp
 except:
@@ -185,7 +183,7 @@ def draw_building_3d(building,rays=[],line_segments=[],dots=[],color='y',fontsiz
   matplotlib_rcParams.update({'font.size': fontsize})
   fig=plt.figure()
   fig_timestamp(fig)
-  ax=Axes3D(fig)
+  ax=fig.add_subplot(projection='3d')
   building.plot(ax,color=color,drawedges=drawedges)
   for ray in rays:
     ray.plot(ax,length=20,color='r',alpha=1)
@@ -290,7 +288,7 @@ def test_03():
 
 def test_04(dbg=False,fontsize=4):
   fig=plt.figure()
-  ax=Axes3D(fig)
+  ax=fig.add_subplot(projection='3d')
   t0=Triangle((0,0,0),(0,1,0),(0,0,1))
   t1=Triangle((0,1,1),(0,1,0),(0,0,1))
   panel=Panel([t0,t1])
