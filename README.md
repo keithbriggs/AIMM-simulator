@@ -1,3 +1,6 @@
+2025-11-19: the AIMM simulator is now superseded by CRRM. Please see <https://github.com/keithbriggs/CRRM-2.0>.
+---------------------------------------------------------------------------------------------------------------
+
 AIMM 5G system simulator
 ------------------------
 
