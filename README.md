@@ -4,7 +4,7 @@
 AIMM 5G system simulator
 ------------------------
 
-The AIMM simulator emulates a cellular radio system roughly following 5G concepts and channel models.  The intention is to have an easy-to-use and fast system written in pure Python with minimal dependencies. It is especially designed to be suitable for interfacing to AI engines such as ``tensorflow`` or ``pytorch``, and it is not a principal aim for it to be extremely accurate at the level of the radio channel.  The simulator was developed for the AIMM project (<https://aimm.celticnext.eu>) by Keith Briggs (<https://keithbriggs.info>).
+The AIMM simulator emulates a cellular radio system roughly following 5G concepts and channel models.  The intention is to have an easy-to-use and fast system written in pure Python with minimal dependencies. It is especially designed to be suitable for interfacing to AI engines such as ``tensorflow`` or ``pytorch``, and it is not a principal aim for it to be extremely accurate at the level of the radio channel.  The simulator was developed for the AIMM project (<https://www.celticnext.eu/archive/aimm.celticnext.eu/>) by Keith Briggs (<https://keithbriggs.info>).
 
 The full documentation is at <https://aimm-simulator.readthedocs.io/en/latest/>.
 
