@@ -380,8 +380,9 @@ class UE:
       stdout.flush()
     while True:
       if s.f_callback is not None: s.f_callback(s,**s.f_callback_kwargs)
-      s.send_rsrp_reports()
-      s.send_subband_cqi_report() # FIXME merge these two reports
+      #s.send_rsrp_reports()
+      #s.send_subband_cqi_report() # FIXME merge these two reports
+      s.send_ue_reports()
       #print(f'dbg: Main loop of UE class started'); exit()
       yield s.sim.env.timeout(s.reporting_interval)
 
@@ -526,6 +527,53 @@ class UE:
         received_interference_power=antenna_gain_dB+cell.power_dBm-pl_dB
         interference+=from_dB(received_interference_power)*cell.subband_mask
     rsrp=from_dB(rsrp_dBm)
+    s.sinr_dB=to_dB(rsrp/interference) # scalar/array
+    s.cqi=cqi=SINR_to_CQI(s.sinr_dB)
+    spectral_efficiency=np.array([CQI_to_64QAM_efficiency(cqi_i) for cqi_i in cqi])
+    now=float(s.sim.env.now)
+    # per-UE throughput...
+    throughput_Mbps=s.serving_cell.bw_MHz*(spectral_efficiency@s.serving_cell.subband_mask)/s.serving_cell.n_subbands/len(s.serving_cell.attached)
+    s.serving_cell.reports['cqi'][s.i]=(now,cqi)
+    s.serving_cell.reports['throughput_Mbps'][s.i]=(now,throughput_Mbps,)
+    return throughput_Mbps
+
+  def send_ue_reports(s,threshold=-120.0):
+    '''
+    George Davy 2023-11-22
+    Combination of both the RSRP and CQI reports in one.
+
+    subband_CQI_report:
+    For this UE, send an array of CQI reports, one for each subband; and a total throughput report, to the serving cell.
+    What is sent is a 2-tuple (current time, array of reports).
+    For RSRP reports, use the function ``send_rsrp_reports``.
+    Also saves the CQI[1]s in s.cqi, and returns the throughput value.
+
+    rsrp_report:
+    Send RSRP reports in dBm to all cells for which it is over the threshold.
+    Subbands not handled.
+    '''
+    if s.serving_cell is None: return 0.0 # 2022-08-08 detached
+    interference=from_dB(s.noise_power_dBm)*np.ones(s.serving_cell.n_subbands)
+    for cell in s.sim.cells:
+      pl_dB=s.pathloss(cell.xyz,s.xyz)
+      antenna_gain_dB=0.0
+      if cell.pattern is not None:
+        vector=s.xyz-cell.xyz # vector pointing from cell to UE
+        angle_degrees=(180.0/math_pi)*atan2(vector[1],vector[0])
+        antenna_gain_dB=cell.pattern(angle_degrees) if callable(cell.pattern) \
+          else cell.pattern[int(angle_degrees)%360]
+      if cell.i==s.serving_cell.i: # wanted signal
+        rsrp_dBm = rsrp_dBm_serving = cell.MIMO_gain_dB+antenna_gain_dB+cell.power_dBm-pl_dB
+      else: # unwanted interference
+        received_interference_power=antenna_gain_dB+cell.power_dBm-pl_dB
+        interference+=from_dB(received_interference_power)*cell.subband_mask
+        rsrp_dBm = cell.MIMO_gain_dB+antenna_gain_dB+cell.power_dBm-pl_dB
+      if rsrp_dBm>threshold:
+        cell.reports['rsrp'][s.i]=(s.sim.env.now,rsrp_dBm)
+        if s.i not in cell.rsrp_history:
+          cell.rsrp_history[s.i]=deque([-np.inf,]*10,maxlen=10)
+        cell.rsrp_history[s.i].appendleft(rsrp_dBm)
+    rsrp=from_dB(rsrp_dBm_serving)
     s.sinr_dB=to_dB(rsrp/interference) # scalar/array
     s.cqi=cqi=SINR_to_CQI(s.sinr_dB)
     spectral_efficiency=np.array([CQI_to_64QAM_efficiency(cqi_i) for cqi_i in cqi])
